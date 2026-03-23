@@ -1,0 +1,11 @@
+# NextJS ignores
+node_modules
+.env
+
+# Flask ignore
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+venv/
+.venv/

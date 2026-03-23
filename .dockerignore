@@ -1,0 +1,18 @@
+# backend/.dockerignore
+
+# Git y Docker
+.git
+.gitignore
+.dockerignore
+Dockerfile
+docker-compose.yml
+README.md
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environments
+.venv/
+venv/
+env/
