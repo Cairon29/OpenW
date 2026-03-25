@@ -200,3 +200,122 @@ class NovedadService:
     @staticmethod
     def get_all_novedades():
         return Novedad.query.order_by(Novedad.fecha_registro.desc()).all()
+
+    @staticmethod
+    def create_novedad(titulo, descripcion, severidad, estado=None, categoria_id=None, user_phone=None):
+        """Crea una novedad manualmente desde el dashboard."""
+        sev = SeveridadEnum(severidad) if severidad else SeveridadEnum.MEDIA
+        est = EstadoEnum(estado) if estado else EstadoEnum.ABIERTA
+        novedad = Novedad(
+            titulo=titulo,
+            descripcion=descripcion,
+            severidad=sev,
+            estado=est,
+            categoria_id=categoria_id,
+            user_phone=user_phone,
+            fecha_registro=datetime.now(timezone.utc),
+        )
+        db.session.add(novedad)
+        db.session.commit()
+        return novedad
+
+    @staticmethod
+    def get_dashboard_metrics():
+        """Calcula métricas reales del dashboard desde la tabla novedades."""
+        from sqlalchemy import func, cast, Date
+        from datetime import date, timedelta
+
+        today = date.today()
+
+        total = Novedad.query.count()
+        open_cases = Novedad.query.filter_by(estado=EstadoEnum.ABIERTA).count()
+        resolved_today = Novedad.query.filter(
+            Novedad.estado == EstadoEnum.RESUELTA,
+            cast(Novedad.fecha_registro, Date) == today,
+        ).count()
+        critical_open = Novedad.query.filter(
+            Novedad.severidad == SeveridadEnum.CRITICA,
+            Novedad.estado == EstadoEnum.ABIERTA,
+        ).count()
+
+        # Distribución por severidad
+        by_severity = {}
+        for sev in SeveridadEnum:
+            by_severity[sev.value] = Novedad.query.filter_by(severidad=sev).count()
+
+        # Distribución por estado
+        by_status = {}
+        for est in EstadoEnum:
+            by_status[est.value] = Novedad.query.filter_by(estado=est).count()
+
+        # Tendencia últimos 7 días
+        recent_trend = []
+        for i in range(6, -1, -1):
+            day = today - timedelta(days=i)
+            count = Novedad.query.filter(
+                cast(Novedad.fecha_registro, Date) == day
+            ).count()
+            recent_trend.append({"date": day.strftime("%b %d"), "count": count})
+
+        return {
+            "totalCases": total,
+            "openCases": open_cases,
+            "resolvedToday": resolved_today,
+            "criticalOpen": critical_open,
+            "bySeverity": by_severity,
+            "byStatus": by_status,
+            "recentTrend": recent_trend,
+        }
+
+    @staticmethod
+    def get_bot_metrics():
+        """Calcula métricas reales del bot desde conversaciones en memoria y la DB."""
+        from sqlalchemy import cast, func
+        from datetime import date, timedelta
+        from collections import defaultdict
+
+        total_conversations = len(_conversations)
+
+        # Mensajes totales del bot
+        bot_messages = sum(
+            sum(1 for m in msgs if m["role"] == "bot")
+            for msgs in _conversations.values()
+        )
+
+        # Tasa de respuesta: % de conversaciones donde el bot respondió al menos una vez
+        responded = sum(
+            1 for msgs in _conversations.values()
+            if any(m["role"] == "bot" for m in msgs)
+        )
+        response_rate = round((responded / total_conversations * 100) if total_conversations else 0)
+
+        # Uso por día (últimos 7 días)
+        today = date.today()
+        counts_by_day = defaultdict(int)
+        for msgs in _conversations.values():
+            for m in msgs:
+                try:
+                    msg_date = datetime.fromisoformat(m["time"]).date()
+                    counts_by_day[msg_date] += 1
+                except Exception:
+                    pass
+
+        usage_over_time = []
+        for i in range(6, -1, -1):
+            day = today - timedelta(days=i)
+            usage_over_time.append({"date": str(day), "count": counts_by_day.get(day, 0)})
+
+        # Efectividad: novedades con categoría vs sin categoría
+        con_categoria = Novedad.query.filter(Novedad.categoria_id.isnot(None)).count()
+        sin_categoria = Novedad.query.filter(Novedad.categoria_id.is_(None)).count()
+
+        return {
+            "totalConversations": total_conversations,
+            "botMessages": bot_messages,
+            "responseRate": response_rate,
+            "usageOverTime": usage_over_time,
+            "effectiveness": {
+                "conContexto": con_categoria,
+                "sinContexto": sin_categoria,
+            },
+        }

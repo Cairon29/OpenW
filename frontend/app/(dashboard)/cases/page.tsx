@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { CasesTable } from "@/components/dashboard/cases-table"
 import { CasesFilters } from "@/components/dashboard/cases-filters"
+import { NewCaseForm } from "@/components/dashboard/new-case-form"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import type { VulnerabilityCase } from "@/lib/types"
@@ -12,13 +13,23 @@ export default function CasesPage() {
   const [cases, setCases] = useState<VulnerabilityCase[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [modalOpen, setModalOpen] = useState(false)
 
-  useEffect(() => {
+  const loadCases = () => {
+    setLoading(true)
     getNovedades()
       .then(setCases)
       .catch(() => setError("No se pudieron cargar los casos"))
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    loadCases()
   }, [])
+
+  const handleCreated = (newCase: VulnerabilityCase) => {
+    setCases((prev) => [newCase, ...prev])
+  }
 
   return (
     <div className="space-y-6">
@@ -29,11 +40,17 @@ export default function CasesPage() {
             Gestión de casos de vulnerabilidades reportados
           </p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => setModalOpen(true)}>
           <Plus className="h-4 w-4" />
           Nuevo Caso
         </Button>
       </div>
+
+      <NewCaseForm
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        onCreated={handleCreated}
+      />
 
       <CasesFilters />
 

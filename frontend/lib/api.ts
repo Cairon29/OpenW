@@ -49,6 +49,24 @@ function mapCategoria(c: Record<string, unknown>): Category {
 
 // ── Novedades ─────────────────────────────────────────────────────────────────
 
+export async function createNovedad(data: {
+  titulo: string
+  descripcion: string
+  severidad: string
+  estado: string
+  categoria_id?: number | null
+  user_phone?: number | null
+}): Promise<VulnerabilityCase> {
+  const res = await fetch(`${API_URL}/api/novedades/novedades`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error("Error al crear el caso")
+  const created = await res.json()
+  return mapNovedad(created as Record<string, unknown>)
+}
+
 export async function getNovedades(): Promise<VulnerabilityCase[]> {
   const res = await fetch(`${API_URL}/api/novedades/novedades`)
   if (!res.ok) throw new Error("Error al obtener novedades")
@@ -123,6 +141,38 @@ export async function sendManualMessage(phone: string, message: string): Promise
     body: JSON.stringify({ phone, message }),
   })
   if (!res.ok) throw new Error("Error al enviar mensaje")
+}
+
+// ── Dashboard Metrics ─────────────────────────────────────────────────────────
+
+export interface DashboardMetricsAPI {
+  totalCases: number
+  openCases: number
+  resolvedToday: number
+  criticalOpen: number
+  bySeverity: Record<string, number>
+  byStatus: Record<string, number>
+  recentTrend: { date: string; count: number }[]
+}
+
+export interface BotMetricsAPI {
+  totalConversations: number
+  botMessages: number
+  responseRate: number
+  usageOverTime: { date: string; count: number }[]
+  effectiveness: { conContexto: number; sinContexto: number }
+}
+
+export async function getDashboardMetrics(): Promise<DashboardMetricsAPI> {
+  const res = await fetch(`${API_URL}/api/novedades/dashboard/metrics`)
+  if (!res.ok) throw new Error("Error al obtener métricas del dashboard")
+  return res.json()
+}
+
+export async function getBotMetrics(): Promise<BotMetricsAPI> {
+  const res = await fetch(`${API_URL}/api/novedades/bot/metrics`)
+  if (!res.ok) throw new Error("Error al obtener métricas del bot")
+  return res.json()
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────

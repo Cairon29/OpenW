@@ -1,18 +1,51 @@
 "use client"
 
-import { AlertTriangle, CheckCircle, Clock, TrendingUp, MessageSquare, Target, Star } from "lucide-react"
+import { useEffect, useState } from "react"
+import { AlertTriangle, CheckCircle, ShieldAlert, MessageSquare, Bot, Activity } from "lucide-react"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { SeverityChart } from "@/components/dashboard/severity-chart"
 import { TrendChart } from "@/components/dashboard/trend-chart"
 import { RecentCases } from "@/components/dashboard/recent-cases"
-
 import { BotMetricCard } from "@/components/dashboard/bot-metric-card"
 import { BotTrendChart } from "@/components/dashboard/bot-trend-chart"
 import { BotEffectivenessChart } from "@/components/dashboard/bot-effectiveness-chart"
-
-import { mockMetrics, mockCases, mockBotMetrics } from "@/lib/mock-data"
+import { getNovedades, getDashboardMetrics, getBotMetrics } from "@/lib/api"
+import type { DashboardMetricsAPI, BotMetricsAPI } from "@/lib/api"
+import type { VulnerabilityCase, DashboardMetrics, BotMetrics } from "@/lib/types"
 
 export default function DashboardPage() {
+  const [metrics, setMetrics] = useState<DashboardMetricsAPI | null>(null)
+  const [botMetrics, setBotMetrics] = useState<BotMetricsAPI | null>(null)
+  const [cases, setCases] = useState<VulnerabilityCase[]>([])
+
+  useEffect(() => {
+    getDashboardMetrics().then(setMetrics).catch(console.error)
+    getBotMetrics().then(setBotMetrics).catch(console.error)
+    getNovedades().then(setCases).catch(console.error)
+  }, [])
+
+  // Map backend severity keys to DashboardMetrics shape for SeverityChart
+  const severityData: DashboardMetrics["bySeverity"] = {
+    critical: metrics?.bySeverity?.critica ?? 0,
+    high: metrics?.bySeverity?.alta ?? 0,
+    medium: metrics?.bySeverity?.media ?? 0,
+    low: (metrics?.bySeverity?.baja ?? 0) + (metrics?.bySeverity?.informativa ?? 0),
+  }
+
+  const botMetricsMapped: BotMetrics = {
+    totalConversations: botMetrics?.totalConversations ?? 0,
+    conversationsTrend: 0,
+    responseRate: botMetrics?.responseRate ?? 0,
+    responseTrend: 0,
+    satisfactionRate: 0,
+    satisfactionRatings: 0,
+    usageOverTime: botMetrics?.usageOverTime ?? [],
+    effectiveness: {
+      conContexto: botMetrics?.effectiveness?.conContexto ?? 0,
+      sinContexto: botMetrics?.effectiveness?.sinContexto ?? 0,
+    },
+  }
+
   return (
     <div className="space-y-6">
       {/* SECCIÓN VULNERABILIDADES */}
@@ -25,37 +58,34 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
-          title="Total de Casos"
-          value={mockMetrics.totalCases}
-          description="Casos registrados"
+          title="Total de Novedades"
+          value={metrics?.totalCases ?? "—"}
+          description="Registradas en el sistema"
           icon={AlertTriangle}
-          trend={{ value: 12, isPositive: false }}
         />
         <MetricCard
-          title="Casos Abiertos"
-          value={mockMetrics.openCases}
+          title="Abiertas"
+          value={metrics?.openCases ?? "—"}
           description="Pendientes de resolución"
-          icon={Clock}
-        />
-        <MetricCard
-          title="Resueltos Hoy"
-          value={mockMetrics.resolvedToday}
-          description="Casos cerrados"
           icon={CheckCircle}
-          trend={{ value: 25, isPositive: true }}
         />
         <MetricCard
-          title="Tiempo Promedio"
-          value={`${mockMetrics.avgResolutionTime}h`}
-          description="De resolución"
-          icon={TrendingUp}
-          trend={{ value: 8, isPositive: true }}
+          title="Resueltas Hoy"
+          value={metrics?.resolvedToday ?? "—"}
+          description="Cerradas en el día"
+          icon={Activity}
+        />
+        <MetricCard
+          title="Críticas Activas"
+          value={metrics?.criticalOpen ?? "—"}
+          description="Críticas sin resolver"
+          icon={ShieldAlert}
         />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <SeverityChart data={mockMetrics.bySeverity} />
-        <TrendChart data={mockMetrics.recentTrend} />
+        <SeverityChart data={severityData} />
+        <TrendChart data={metrics?.recentTrend ?? []} />
       </div>
 
       {/* SECCIÓN WHATSAPP BOT */}
@@ -70,35 +100,42 @@ export default function DashboardPage() {
         <div className="grid gap-4 md:grid-cols-3 mb-6">
           <BotMetricCard
             title="Conversaciones Totales"
-            value={mockBotMetrics.totalConversations}
+            value={botMetrics?.totalConversations ?? "—"}
             icon={MessageSquare}
             iconColor="text-gray-400"
-            trend={{ value: `${mockBotMetrics.conversationsTrend}% vs. período anterior`, isPositive: true }}
           />
           <BotMetricCard
-            title="Tasa de Respuestas con Contexto"
-            value={`${mockBotMetrics.responseRate}%`}
-            icon={Target}
+            title="Mensajes Enviados por el Bot"
+            value={botMetrics?.botMessages ?? "—"}
+            icon={Bot}
             iconColor="text-rose-500"
-            trend={{ value: `${mockBotMetrics.responseTrend} pts vs. período anterior`, isPositive: true }}
+            trend={
+              botMetrics
+                ? { value: `${botMetrics.responseRate}% de conversaciones respondidas`, isPositive: botMetrics.responseRate > 0 }
+                : undefined
+            }
           />
           <BotMetricCard
-            title="Índice de Satisfacción"
-            value={`${mockBotMetrics.satisfactionRate}%`}
-            icon={Star}
+            title="Novedades con Categoría"
+            value={botMetrics ? `${botMetrics.effectiveness.conContexto}` : "—"}
+            icon={ShieldAlert}
             iconColor="text-yellow-500"
-            description={`Basado en ${mockBotMetrics.satisfactionRatings} calificaciones`}
+            description={
+              botMetrics
+                ? `${botMetrics.effectiveness.sinContexto} sin categoría asignada`
+                : undefined
+            }
           />
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <BotTrendChart data={mockBotMetrics.usageOverTime} />
-          <BotEffectivenessChart data={mockBotMetrics.effectiveness} />
+          <BotTrendChart data={botMetricsMapped.usageOverTime} />
+          <BotEffectivenessChart data={botMetricsMapped.effectiveness} />
         </div>
       </div>
 
       <div className="pt-6">
-        <RecentCases cases={mockCases} />
+        <RecentCases cases={cases} />
       </div>
     </div>
   )
