@@ -1,10 +1,25 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import { CasesTable } from "@/components/dashboard/cases-table"
 import { CasesFilters } from "@/components/dashboard/cases-filters"
-import { mockCases } from "@/lib/mock-data"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
+import type { VulnerabilityCase } from "@/lib/types"
+import { getNovedades } from "@/lib/api"
 
 export default function CasesPage() {
+  const [cases, setCases] = useState<VulnerabilityCase[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    getNovedades()
+      .then(setCases)
+      .catch(() => setError("No se pudieron cargar los casos"))
+      .finally(() => setLoading(false))
+  }, [])
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -22,19 +37,24 @@ export default function CasesPage() {
 
       <CasesFilters />
 
-      <CasesTable cases={mockCases} />
-
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>Mostrando {mockCases.length} de {mockCases.length} casos</span>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" disabled>
-            Anterior
-          </Button>
-          <Button variant="outline" size="sm" disabled>
-            Siguiente
-          </Button>
-        </div>
-      </div>
+      {loading && (
+        <p className="text-muted-foreground text-sm">Cargando casos...</p>
+      )}
+      {error && (
+        <p className="text-destructive text-sm">{error}</p>
+      )}
+      {!loading && !error && (
+        <>
+          <CasesTable cases={cases} />
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>Mostrando {cases.length} de {cases.length} casos</span>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" disabled>Anterior</Button>
+              <Button variant="outline" size="sm" disabled>Siguiente</Button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }

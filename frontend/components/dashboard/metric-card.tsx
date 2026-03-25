@@ -3,7 +3,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
-import { useTheme } from "next-themes"
 
 interface MetricCardProps {
   title: string
@@ -25,7 +24,6 @@ export function MetricCard({
   trend,
   className,
 }: MetricCardProps) {
-  const { theme } = useTheme()
   return (
     <Card className={cn("border-border bg-[#fa8200] text-white dark:bg-card dark:text-foreground", className)}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -40,14 +38,12 @@ export function MetricCard({
           <p className="text-xs text-white/70 dark:text-muted-foreground mt-1">{description}</p>
         )}
         {trend && (
-          <p
-            className={cn(
-              "text-xs mt-1 font-medium",
-              theme === "dark" 
-                ? (trend.isPositive ? "text-green-500" : "text-red-500")
-                : "text-white"
-            )}
-          >
+          <p className={cn(
+            "text-xs mt-1 font-medium",
+            trend.isPositive
+              ? "text-white dark:text-green-500"
+              : "text-white dark:text-red-500"
+          )}>
             {trend.isPositive ? "+" : "-"}
             {Math.abs(trend.value)}% desde ayer
           </p>

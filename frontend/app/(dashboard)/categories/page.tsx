@@ -1,18 +1,27 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { CategoryCard } from "@/components/dashboard/category-card"
 import { CategoryForm } from "@/components/dashboard/category-form"
-import { mockCategories } from "@/lib/mock-data"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Plus, Search } from "lucide-react"
 import type { Category } from "@/lib/types"
+import { getCategorias, createCategoria } from "@/lib/api"
 
 export default function CategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>(mockCategories)
+  const [categories, setCategories] = useState<Category[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+
+  useEffect(() => {
+    getCategorias()
+      .then(setCategories)
+      .catch(() => setError("No se pudieron cargar las categorías"))
+      .finally(() => setLoading(false))
+  }, [])
 
   const filteredCategories = categories.filter(
     (cat) =>
@@ -20,22 +29,22 @@ export default function CategoriesPage() {
       cat.keywords.some((k) => k.toLowerCase().includes(searchQuery.toLowerCase()))
   )
 
-  const handleCreateCategory = (data: {
+  const handleCreateCategory = async (data: {
     name: string
     description: string
     keywords: string[]
     color: string
   }) => {
-    const newCategory: Category = {
-      id: `cat-${Date.now()}`,
-      ...data,
-      createdAt: new Date(),
+    try {
+      const created = await createCategoria(data)
+      setCategories((prev) => [...prev, created])
+    } catch {
+      setError("No se pudo crear la categoría")
     }
-    setCategories([...categories, newCategory])
   }
 
   const handleDeleteCategory = (category: Category) => {
-    setCategories(categories.filter((c) => c.id !== category.id))
+    setCategories((prev) => prev.filter((c) => c.id !== category.id))
   }
 
   return (
@@ -63,21 +72,24 @@ export default function CategoriesPage() {
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filteredCategories.map((category) => (
-          <CategoryCard
-            key={category.id}
-            category={category}
-            onDelete={handleDeleteCategory}
-          />
-        ))}
-      </div>
+      {loading && <p className="text-muted-foreground text-sm">Cargando categorías...</p>}
+      {error && <p className="text-destructive text-sm">{error}</p>}
 
-      {filteredCategories.length === 0 && (
+      {!loading && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {filteredCategories.map((category) => (
+            <CategoryCard
+              key={category.id}
+              category={category}
+              onDelete={handleDeleteCategory}
+            />
+          ))}
+        </div>
+      )}
+
+      {!loading && filteredCategories.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <p className="text-muted-foreground mb-4">
-            No se encontraron categorías
-          </p>
+          <p className="text-muted-foreground mb-4">No se encontraron categorías</p>
           <Button variant="outline" onClick={() => setIsFormOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Crear primera categoría
