@@ -1,7 +1,10 @@
 from flask import Flask, request, jsonify, make_response
+from flask_sqlalchemy import SQLAlchemy
 
+db = SQLAlchemy(app)
 def create_app():
     app = Flask(__name__)
+    db.init_app(app)
 
     # --- In-Memory Mock Database for CRUD Examples ---
     users = [
