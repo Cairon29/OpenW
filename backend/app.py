@@ -1,10 +1,15 @@
 from flask import Flask, request, jsonify, make_response
-from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import create_engine
+
 
 db = SQLAlchemy(app)
 def create_app():
     app = Flask(__name__)
-    db.init_app(app)
+    engine = create_engine('sqlite:///example.db')
+    Base = declarative_base()
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    session = Session()
 
     # --- In-Memory Mock Database for CRUD Examples ---
     users = [
