@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
+<<<<<<< HEAD
       "Bash(docker compose:*)"
+=======
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+>>>>>>> de93f9f23c522234508de27e8999177ed8326ced
     ]
   }
 }

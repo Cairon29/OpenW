@@ -1,9 +1,17 @@
 from flask import Flask
-
 from extensions import db, cors
+from flask import Flask, request, jsonify, make_response
+from sqlalchemy import create_engine
 
+
+db = SQLAlchemy(app)
 def create_app():
     app = Flask(__name__)
+    engine = create_engine('sqlite:///example.db')
+    Base = declarative_base()
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    session = Session()
 
     import os
     app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["SQLALCHEMY_DATABASE_URI"]
