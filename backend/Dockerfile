@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     gnupg \
     ca-certificates \
     netcat-openbsd \
+    dos2unix \
     build-essential \
     python3-dev \
     libpq-dev \
@@ -24,7 +25,7 @@ COPY . .
 # Configurar variables de entorno y permisos
 ENV PYTHONPATH="${PYTHONPATH}:/app"
 ENV FLASK_APP=app:create_app
-RUN chmod +x /app/entrypoint.sh
+RUN dos2unix /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Exponer el puerto y ejecutar
 EXPOSE 2222

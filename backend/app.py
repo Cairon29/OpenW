@@ -1,44 +1,39 @@
 from flask import Flask
-from extensions import db, cors
-from flask import Flask, request, jsonify, make_response
-from sqlalchemy import create_engine
+from flask_cors import CORS
+from extensions import db, login_manager, cors
+from config import DevelopmentConfig, ProductionConfig
+import os
 
+login_manager.login_view = 'api_v1.auth.serve_login'
 
-db = SQLAlchemy(app)
 def create_app():
+    # Initialize Flask app
     app = Flask(__name__)
-    engine = create_engine('sqlite:///example.db')
-    Base = declarative_base()
-    Base.metadata.create_all(engine)
-    Session = sessionmaker(bind=engine)
-    session = Session()
 
-    import os
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["SQLALCHEMY_DATABASE_URI"]
-    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev")
+    # Determine the environment and load the appropriate configuration
+    env = os.getenv('FLASK_MODE', 'development')
 
-    # Inicializar extensiones
+    if env == 'production':
+        app.config.from_object(ProductionConfig)
+    else:
+        app.config.from_object(DevelopmentConfig)
+
+    # Initialize extensions
     db.init_app(app)
-    cors.init_app(app, resources={r"/api/*": {"origins": "*"}})
+    login_manager.init_app(app)
+    cors.init_app(app, resources={r"/api/v1/*": {"origins": "*"}})
 
-    # --- REGISTRO DE BLUEPRINTS ---
-    from controllers.user_controller import user_bp
-    from controllers.novedades_controller import novedades_bp
-    from controllers.categoria_cotroller import categorias_bp
-    from controllers.vicepresidencia_controller import vp_bp
+    # Register blueprints
+    from modules import api_v1
+    app.register_blueprint(api_v1)
 
-    app.register_blueprint(user_bp, url_prefix="/api/users")
-    app.register_blueprint(novedades_bp, url_prefix="/api/novedades")
-    app.register_blueprint(categorias_bp, url_prefix="/api/categorias")
-    app.register_blueprint(vp_bp, url_prefix="/api/vicepresidencias")
-
-    # Crear tablas
-    with app.app_context():
-        import models  # Importante para que SQLAlchemy detecte las tablas
-        db.create_all()
-
+    # Health check endpoint
     @app.route("/health")
     def health():
         return {"status": "ok", "service": "openw-backend"}, 200
-
+    
     return app
+
+if __name__ == "__main__":
+    app = create_app()
+    app.run(host="0.0.0.0", port=2222)

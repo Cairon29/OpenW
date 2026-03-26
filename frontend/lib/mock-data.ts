@@ -4,7 +4,7 @@ export const mockCases: VulnerabilityCase[] = [
   {
     id: "VULN-001",
     title: "SQL Injection en formulario de login",
-    description: "Se detectó vulnerabilidad de inyección SQL en el endpoint /api/auth/login",
+    description: "Se detectó vulnerabilidad de inyección SQL en el endpoint /api/v1/auth/login",
     severity: "critical",
     status: "open",
     reportedBy: "Juan García",
