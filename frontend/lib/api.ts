@@ -57,7 +57,7 @@ export async function createNovedad(data: {
   categoria_id?: number | null
   user_phone?: number | null
 }): Promise<VulnerabilityCase> {
-  const res = await fetch(`${API_URL}/api/novedades/novedades`, {
+  const res = await fetch(`${API_URL}/api/v1/novedades/novedades`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -68,7 +68,7 @@ export async function createNovedad(data: {
 }
 
 export async function getNovedades(): Promise<VulnerabilityCase[]> {
-  const res = await fetch(`${API_URL}/api/novedades/novedades`)
+  const res = await fetch(`${API_URL}/api/v1/novedades/novedades`)
   if (!res.ok) throw new Error("Error al obtener novedades")
   const data = await res.json()
   return (data as Record<string, unknown>[]).map(mapNovedad)
@@ -77,7 +77,7 @@ export async function getNovedades(): Promise<VulnerabilityCase[]> {
 // ── Categorías ────────────────────────────────────────────────────────────────
 
 export async function getCategorias(): Promise<Category[]> {
-  const res = await fetch(`${API_URL}/api/categorias/categorias`)
+  const res = await fetch(`${API_URL}/api/v1/categorias/categorias`)
   if (!res.ok) throw new Error("Error al obtener categorías")
   const data = await res.json()
   return (data as Record<string, unknown>[]).map(mapCategoria)
@@ -88,11 +88,11 @@ export async function createCategoria(data: {
   description: string
   keywords: string[]
 }): Promise<Category> {
-  const res = await fetch(`${API_URL}/api/categorias/categorias`, {
+  const res = await fetch(`${API_URL}/api/v1/categorias/categorias`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      nombre: data.name,
+      categoria: data.name,
       descripcion: data.description,
       palabra_clave: data.keywords[0] ?? null,
     }),
@@ -119,13 +119,13 @@ export interface BotConversation {
 }
 
 export async function getBotConversations(): Promise<BotConversation[]> {
-  const res = await fetch(`${API_URL}/api/novedades/bot/conversations`)
+  const res = await fetch(`${API_URL}/api/v1/chat/bot/conversations`)
   if (!res.ok) throw new Error("Error al obtener conversaciones")
   return res.json()
 }
 
 export async function toggleBot(phone: string): Promise<{ phone: string; bot_active: boolean }> {
-  const res = await fetch(`${API_URL}/api/novedades/bot/toggle`, {
+  const res = await fetch(`${API_URL}/api/v1/chat/bot/toggle`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ phone }),
@@ -135,7 +135,7 @@ export async function toggleBot(phone: string): Promise<{ phone: string; bot_act
 }
 
 export async function sendManualMessage(phone: string, message: string): Promise<void> {
-  const res = await fetch(`${API_URL}/api/novedades/bot/send`, {
+  const res = await fetch(`${API_URL}/api/v1/chat/bot/send`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ phone, message }),
@@ -164,13 +164,13 @@ export interface BotMetricsAPI {
 }
 
 export async function getDashboardMetrics(): Promise<DashboardMetricsAPI> {
-  const res = await fetch(`${API_URL}/api/novedades/dashboard/metrics`)
+  const res = await fetch(`${API_URL}/api/v1/novedades/dashboard/metrics`)
   if (!res.ok) throw new Error("Error al obtener métricas del dashboard")
   return res.json()
 }
 
 export async function getBotMetrics(): Promise<BotMetricsAPI> {
-  const res = await fetch(`${API_URL}/api/novedades/bot/metrics`)
+  const res = await fetch(`${API_URL}/api/v1/chat/bot/metrics`)
   if (!res.ok) throw new Error("Error al obtener métricas del bot")
   return res.json()
 }
@@ -181,7 +181,7 @@ export async function login(
   email: string,
   password: string
 ): Promise<Record<string, unknown>> {
-  const res = await fetch(`${API_URL}/api/users/login`, {
+  const res = await fetch(`${API_URL}/api/v1/users/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
