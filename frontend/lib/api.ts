@@ -92,7 +92,7 @@ export async function createCategoria(data: {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      nombre: data.name,
+      categoria: data.name,
       descripcion: data.description,
       palabra_clave: data.keywords[0] ?? null,
     }),
@@ -119,13 +119,13 @@ export interface BotConversation {
 }
 
 export async function getBotConversations(): Promise<BotConversation[]> {
-  const res = await fetch(`${API_URL}/api/v1/novedades/bot/conversations`)
+  const res = await fetch(`${API_URL}/api/v1/chat/bot/conversations`)
   if (!res.ok) throw new Error("Error al obtener conversaciones")
   return res.json()
 }
 
 export async function toggleBot(phone: string): Promise<{ phone: string; bot_active: boolean }> {
-  const res = await fetch(`${API_URL}/api/v1/novedades/bot/toggle`, {
+  const res = await fetch(`${API_URL}/api/v1/chat/bot/toggle`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ phone }),
@@ -135,7 +135,7 @@ export async function toggleBot(phone: string): Promise<{ phone: string; bot_act
 }
 
 export async function sendManualMessage(phone: string, message: string): Promise<void> {
-  const res = await fetch(`${API_URL}/api/v1/novedades/bot/send`, {
+  const res = await fetch(`${API_URL}/api/v1/chat/bot/send`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ phone, message }),
@@ -170,7 +170,7 @@ export async function getDashboardMetrics(): Promise<DashboardMetricsAPI> {
 }
 
 export async function getBotMetrics(): Promise<BotMetricsAPI> {
-  const res = await fetch(`${API_URL}/api/v1/novedades/bot/metrics`)
+  const res = await fetch(`${API_URL}/api/v1/chat/bot/metrics`)
   if (!res.ok) throw new Error("Error al obtener métricas del bot")
   return res.json()
 }

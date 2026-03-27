@@ -9,7 +9,7 @@ services:
     env_file:
       - .env
     environment:
-      - FLASK_APP=app:create_app
+      - FLASK_APP=src:create_app
       - FLASK_ENV=${FLASK_MODE}
     command: /bin/sh -c "dos2unix /app/entrypoint.sh && sh /app/entrypoint.sh"
     depends_on:

@@ -1,13 +1,16 @@
 {
   "permissions": {
     "allow": [
-<<<<<<< HEAD
-      "Bash(docker compose:*)"
-=======
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git push:*)"
->>>>>>> de93f9f23c522234508de27e8999177ed8326ced
+      "Bash(docker compose:*)",
+      "Bash(grep -r \"create_all\\\\|migrate\\\\|alembic\" C:UsersccairOneDriveDocumentosprogramming_stuff_5.0appsOpenWbackend --include=*.py --exclude-dir=venv)",
+      "Bash(grep -E \"\\\\.sh$|\\\\.sql$|\\\\.ini$|migrations\")",
+      "Bash(grep:*)",
+      "Bash(docker builder:*)",
+      "Bash(curl:*)",
+      "Bash(docker rm:*)",
+      "Bash(cat:*)",
+      "Bash(find /c/Users/ccair/OneDrive/Documentos/programming_stuff_5.0/app_tests/whatsapp-business-jaspers-market -type f \\\\\\(-name *.html -o -name *.css -o -name *.vue -o -name *.jsx \\\\\\))",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f''''Messages: {len\\(d[0][\"\"messages\"\"]\\)}''''\\)\")"
     ]
   }
 }
