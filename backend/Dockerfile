@@ -24,7 +24,7 @@ COPY . .
 
 # Configurar variables de entorno y permisos
 ENV PYTHONPATH="${PYTHONPATH}:/app"
-ENV FLASK_APP=app:create_app
+ENV FLASK_APP=src:create_app
 RUN dos2unix /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Exponer el puerto y ejecutar

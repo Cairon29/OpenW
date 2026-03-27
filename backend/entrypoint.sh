@@ -20,5 +20,6 @@ exec gunicorn \
   --timeout 310 \
   --graceful-timeout 310 \
   --workers 4 \
+  --preload \
   --bind 0.0.0.0:2222 \
-  "app:create_app()"
+  "src:create_app()"
