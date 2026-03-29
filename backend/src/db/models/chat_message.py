@@ -1,5 +1,6 @@
 from src.extensions import db
 from datetime import datetime, timezone
+from pgvector.sqlalchemy import Vector
 
 
 class ChatMessage(db.Model):
@@ -12,3 +13,4 @@ class ChatMessage(db.Model):
     timestamp = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     wa_message_id = db.Column(db.String(100), nullable=True, unique=True)
     status = db.Column(db.String(20), nullable=True)  # sent/delivered/read (outgoing only)
+    embedding = db.Column(Vector(384), nullable=True)  # all-MiniLM-L6-v2 dimension

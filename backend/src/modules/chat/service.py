@@ -5,12 +5,16 @@ from sqlalchemy.exc import IntegrityError
 from src.extensions import db
 from src.db.models import Novedad, CategoriaNovedad, SeveridadEnum, EstadoEnum
 from src.db.models.chat_message import ChatMessage
+from src.db.models.conversation_state import ConversationState
 from datetime import datetime, timezone
 from collections import defaultdict
 from src.config import config
 
-# Groq client singleton
+
 _groq_client = None
+
+HISTORY_WINDOW = 10   # mensajes anteriores que se pasan a Groq como contexto
+SIMILAR_WINDOW = 3    # mensajes similares recuperados via pgVector
 
 
 def _get_groq_client():
@@ -28,9 +32,6 @@ def _get_groq_client():
 WHATSAPP_ACCESS_TOKEN = config.WHATSAPP_ACCESS_TOKEN
 WHATSAPP_PHONE_NUMBER_ID = config.WHATSAPP_PHONE_NUMBER_ID
 
-# In-memory bot toggle (transient, defaults to bot=on on restart)
-_bot_states = {}  # {phone: bool} True = bot activo
-
 
 class ChatService:
 
@@ -40,11 +41,12 @@ class ChatService:
         phone = str(phone)
         ChatService._store_message(phone, "user", texto, wa_message_id=wa_message_id)
 
-        if not _bot_states.get(phone, True):
+        # Lee estado del bot desde DB (no memoria volatil)
+        if not ChatService._get_bot_state(phone):
             return None
 
         categoria_detectada = ChatService._match_categoria_por_palabras_clave(texto)
-        analisis = ChatService._analizar_con_ia(texto, categoria_detectada)
+        analisis = ChatService._analizar_con_ia(phone, texto, categoria_detectada)
 
         categoria = categoria_detectada
         if not categoria:
@@ -92,8 +94,11 @@ class ChatService:
         return None
 
     @staticmethod
-    def _analizar_con_ia(texto, categoria_detectada=None):
-        """Llama a Groq para clasificar el mensaje y generar una respuesta al usuario."""
+    def _analizar_con_ia(phone, texto, categoria_detectada=None):
+        """
+        Llama a Groq para clasificar el mensaje y generar una respuesta.
+        Incluye historial de conversacion y contexto semantico similar via pgVector.
+        """
         try:
             groq_client = _get_groq_client()
             if groq_client is None:
@@ -103,6 +108,13 @@ class ChatService:
             nombres = [c.categoria for c in categorias] if categorias else ["General"]
             categorias_str = ", ".join(f"'{n}'" for n in nombres)
 
+            # Contexto semantico: mensajes similares de otras conversaciones
+            contexto_similar = ChatService._buscar_mensajes_similares(texto, phone)
+            contexto_txt = ""
+            if contexto_similar:
+                ejemplos = "\n".join(f"- {m.text}" for m in contexto_similar)
+                contexto_txt = f"\nMensajes similares previos de otros usuarios:\n{ejemplos}\n"
+
             system_prompt = (
                 "Eres un asistente de atencion al cliente. Analiza el mensaje y responde SOLO en JSON valido.\n"
                 "Campos requeridos:\n"
@@ -111,16 +123,27 @@ class ChatService:
                 f"3. 'categoria': clasifica en una de estas categorias: {categorias_str}.\n"
                 "4. 'respuesta_usuario': mensaje amigable y breve para enviarle al usuario por WhatsApp. "
                 "Confirma que recibiste su mensaje y orientalo segun el tema."
+                f"{contexto_txt}"
             )
 
             if categoria_detectada:
                 system_prompt += f"\nNota: el mensaje fue clasificado automaticamente como '{categoria_detectada.categoria}' por palabra clave."
 
+            # Historial de la conversacion actual (ultimos N mensajes)
+            historial = ChatMessage.query.filter_by(phone=phone)\
+                .order_by(ChatMessage.timestamp.desc())\
+                .limit(HISTORY_WINDOW).all()
+            historial = list(reversed(historial))
+
+            messages = [{"role": "system", "content": system_prompt}]
+            for msg in historial:
+                role = "assistant" if msg.role == "bot" else "user"
+                messages.append({"role": role, "content": msg.text})
+            # El mensaje actual va al final
+            messages.append({"role": "user", "content": texto})
+
             chat_completion = groq_client.chat.completions.create(
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": texto}
-                ],
+                messages=messages,
                 model="llama-3.3-70b-versatile",
                 response_format={"type": "json_object"},
             )
@@ -133,6 +156,27 @@ class ChatService:
                 "categoria": None,
                 "respuesta_usuario": "Recibimos tu mensaje. En breve te daremos mas informacion.",
             }
+
+    @staticmethod
+    def _buscar_mensajes_similares(texto, phone_excluir, limit=SIMILAR_WINDOW):
+        """
+        Busca mensajes semanticamente similares en otras conversaciones usando pgVector.
+        Retorna una lista de ChatMessage o lista vacia si embeddings no estan disponibles.
+        """
+        try:
+            from src.utils.embeddings import get_embedding
+            embedding = get_embedding(texto)
+            similares = ChatMessage.query\
+                .filter(ChatMessage.phone != phone_excluir)\
+                .filter(ChatMessage.embedding.isnot(None))\
+                .filter(ChatMessage.role == "user")\
+                .order_by(ChatMessage.embedding.cosine_distance(embedding))\
+                .limit(limit)\
+                .all()
+            return similares
+        except Exception as e:
+            print(f"[Embeddings] Busqueda semantica no disponible: {e}")
+            return []
 
     @staticmethod
     def _enviar_whatsapp(phone, mensaje):
@@ -165,14 +209,24 @@ class ChatService:
 
     @staticmethod
     def _store_message(phone, role, text, wa_message_id=None):
-        """Guarda un mensaje en la base de datos."""
+        """Guarda un mensaje en la base de datos e intenta generar su embedding."""
         phone = str(phone)
+
+        # Genera embedding de forma no bloqueante (falla silenciosamente)
+        embedding = None
+        try:
+            from src.utils.embeddings import get_embedding
+            embedding = get_embedding(text)
+        except Exception as e:
+            print(f"[Embeddings] No se pudo generar embedding: {e}")
+
         msg = ChatMessage(
             phone=phone,
             role=role,
             text=text,
             wa_message_id=wa_message_id,
             timestamp=datetime.now(timezone.utc),
+            embedding=embedding,
         )
         try:
             db.session.add(msg)
@@ -181,21 +235,41 @@ class ChatService:
             db.session.rollback()
             print(f"[Chat] Duplicate message ignored: {wa_message_id}")
 
-    # -- Bot management --
+    # ── Bot state (persistido en DB) ─────────────────────────────────────────
+
+    @staticmethod
+    def _get_bot_state(phone: str) -> bool:
+        """Lee el estado del bot para este telefono desde la DB. Default: True (activo)."""
+        state = ConversationState.query.get(phone)
+        return state.bot_active if state else True
 
     @staticmethod
     def toggle_bot(phone):
         """Activa o desactiva el bot para una conversacion. Retorna el nuevo estado."""
         phone = str(phone)
-        _bot_states[phone] = not _bot_states.get(phone, True)
-        return _bot_states[phone]
+        state = ConversationState.query.get(phone)
+        if state is None:
+            state = ConversationState(phone=phone, bot_active=False)
+            db.session.add(state)
+        else:
+            state.bot_active = not state.bot_active
+            state.updated_at = datetime.now(timezone.utc)
+        db.session.commit()
+        return state.bot_active
 
     @staticmethod
     def set_bot_state(phone, active):
         """Establece el estado del bot para una conversacion."""
         phone = str(phone)
-        _bot_states[phone] = bool(active)
-        return _bot_states[phone]
+        state = ConversationState.query.get(phone)
+        if state is None:
+            state = ConversationState(phone=phone, bot_active=bool(active))
+            db.session.add(state)
+        else:
+            state.bot_active = bool(active)
+            state.updated_at = datetime.now(timezone.utc)
+        db.session.commit()
+        return state.bot_active
 
     @staticmethod
     def enviar_mensaje_manual(phone, mensaje):
@@ -225,7 +299,7 @@ class ChatService:
             last = messages[-1] if messages else {}
             result.append({
                 "phone": phone,
-                "bot_active": _bot_states.get(phone, True),
+                "bot_active": ChatService._get_bot_state(phone),
                 "last_message": last.get("text", ""),
                 "last_time": last.get("time", ""),
                 "messages": messages,

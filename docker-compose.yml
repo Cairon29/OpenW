@@ -11,7 +11,7 @@ services:
     environment:
       - FLASK_APP=src:create_app
       - FLASK_ENV=${FLASK_MODE}
-    command: /bin/sh -c "dos2unix /app/entrypoint.sh && sh /app/entrypoint.sh"
+    command: /bin/sh /app/entrypoint.sh
     depends_on:
       db:
         condition: service_healthy
@@ -26,7 +26,7 @@ services:
     env_file:
       - .env
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:${BACKEND_PORT}
+      - API_URL=http://backend:${BACKEND_PORT}
     depends_on:
       - backend
 

@@ -13,3 +13,4 @@ marshmallow
 flask-marshmallow
 groq
 requests
+sentence-transformers
