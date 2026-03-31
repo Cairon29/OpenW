@@ -175,6 +175,16 @@ export async function getBotMetrics(): Promise<BotMetricsAPI> {
   return res.json()
 }
 
+// ── Verificación de email (onboarding WhatsApp) ─────────────────────────────
+
+export async function verifyEmail(token: string): Promise<{ status: string }> {
+  const res = await fetch(
+    `${API_URL}/api/v1/auth/verify-email?token=${encodeURIComponent(token)}`
+  )
+  if (!res.ok) throw new Error("Token inválido o expirado")
+  return res.json()
+}
+
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
 export async function login(
