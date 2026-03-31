@@ -1,4 +1,4 @@
-from .enums import SeveridadEnum, EstadoEnum
+from .enums import SeveridadEnum, EstadoEnum, RoleMensajeEnum, OnboardingStepEnum
 from .usuarios import Usuarios
 from .vicepresidencia import Vicepresidencia
 from .direccion import Direccion
@@ -10,7 +10,7 @@ from .chat_message import ChatMessage
 from .conversation_state import ConversationState
 
 __all__ = [
-    'SeveridadEnum', 'EstadoEnum',
+    'SeveridadEnum', 'EstadoEnum', 'RoleMensajeEnum', 'OnboardingStepEnum',
     'Usuarios', 'Vicepresidencia', 'Direccion',
     'CategoriaNovedad', 'Novedad',
     'IAModel', 'configuracion',

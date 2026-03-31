@@ -1,20 +1,24 @@
 import json
+import secrets
 import requests
 from groq import Groq
-from sqlalchemy.exc import IntegrityError
 from src.extensions import db
 from src.db.models import Novedad, CategoriaNovedad, SeveridadEnum, EstadoEnum
 from src.db.models.chat_message import ChatMessage
 from src.db.models.conversation_state import ConversationState
-from datetime import datetime, timezone
-from collections import defaultdict
+from src.db.models.enums import OnboardingStepEnum, RoleMensajeEnum
+from src.utils.email import send_verification_email
+from src.utils.whatsapp import enviar_whatsapp
+from src.utils.messages import store_message
+from src.modules.auth.service import AuthService
+from datetime import datetime, timezone, timedelta
 from src.config import config
 
 
 _groq_client = None
 
-HISTORY_WINDOW = 10   # mensajes anteriores que se pasan a Groq como contexto
-SIMILAR_WINDOW = 3    # mensajes similares recuperados via pgVector
+HISTORY_WINDOW       = 10                  # mensajes anteriores que se pasan a Groq como contexto
+SIMILAR_WINDOW       = 3                   # mensajes similares recuperados via pgVector
 
 
 def _get_groq_client():
@@ -37,13 +41,75 @@ class ChatService:
 
     @staticmethod
     def procesar_mensaje_whatsapp(phone, texto, wa_message_id=None):
-        """Procesa un mensaje entrante de WhatsApp y responde si el bot esta activo."""
+        """Procesa un mensaje entrante de WhatsApp siguiendo el flujo de onboarding."""
         phone = str(phone)
-        ChatService._store_message(phone, "user", texto, wa_message_id=wa_message_id)
 
-        # Lee estado del bot desde DB (no memoria volatil)
+        estado, es_nuevo = ChatService._get_or_create_state(phone)
+        store_message(phone, RoleMensajeEnum.USER, texto, wa_message_id=wa_message_id)
+
+        step = estado.onboarding_step
+
+        # ── Onboarding: solicitar email ───────────────────────────────────────
+        if step == OnboardingStepEnum.PENDING_EMAIL:
+            if es_nuevo:
+                ChatService._enviar_template_whatsapp(phone, "mensaje_bienvenida")
+
+            if AuthService.is_valid_email(texto):
+                token = secrets.token_urlsafe(32)
+                estado.email                = texto
+                estado.verification_token   = token
+                estado.verification_sent_at = datetime.now(timezone.utc)
+                estado.onboarding_step      = OnboardingStepEnum.PENDING_VERIFICATION
+                db.session.commit()
+
+                send_verification_email(texto, token)
+                respuesta = (
+                    f"Te enviamos un email a *{texto}*.\n"
+                    "Tenés *3 minutos* para verificarlo antes de que el link expire."
+                )
+            else:
+                respuesta = (
+                    "Para continuar necesitamos tu dirección de email. "
+                    "Por favor, escribila a continuación."
+                )
+
+            wamid = enviar_whatsapp(phone, respuesta)
+            store_message(phone, RoleMensajeEnum.BOT, respuesta, wa_message_id=wamid)
+            return
+
+        # ── Onboarding: esperando verificacion ───────────────────────────────
+        if step == OnboardingStepEnum.PENDING_VERIFICATION:
+            elapsed = datetime.now(timezone.utc) - estado.verification_sent_at.replace(tzinfo=timezone.utc)
+            if elapsed > VERIFICATION_TIMEOUT:
+                estado.onboarding_step    = OnboardingStepEnum.PENDING_EMAIL
+                estado.verification_token = None
+                db.session.commit()
+                respuesta = (
+                    "El tiempo de verificación venció. "
+                    "Escribí tu email nuevamente para recibir un nuevo link."
+                )
+            else:
+                respuesta = (
+                    "Todavía no verificaste tu email. "
+                    "Revisá tu bandeja de entrada y hacé click en el botón de confirmación."
+                )
+
+            wamid = enviar_whatsapp(phone, respuesta)
+            store_message(phone, RoleMensajeEnum.BOT, respuesta, wa_message_id=wamid)
+            return
+
+        # ── Estado legacy EXPIRED (reset) ────────────────────────────────────
+        if step == OnboardingStepEnum.EXPIRED:
+            estado.onboarding_step = OnboardingStepEnum.PENDING_EMAIL
+            db.session.commit()
+            respuesta = "Escribí tu email para continuar."
+            wamid = enviar_whatsapp(phone, respuesta)
+            store_message(phone, RoleMensajeEnum.BOT, respuesta, wa_message_id=wamid)
+            return
+
+        # ── Flujo normal (VERIFIED) ───────────────────────────────────────────
         if not ChatService._get_bot_state(phone):
-            return None
+            return
 
         categoria_detectada = ChatService._match_categoria_por_palabras_clave(texto)
         analisis = ChatService._analizar_con_ia(phone, texto, categoria_detectada)
@@ -71,13 +137,59 @@ class ChatService:
             db.session.commit()
 
             respuesta = analisis.get("respuesta_usuario", "Recibimos tu mensaje. En breve te responderemos.")
-            wamid = ChatService._enviar_whatsapp(phone, respuesta)
-            ChatService._store_message(phone, "bot", respuesta, wa_message_id=wamid)
+            wamid = enviar_whatsapp(phone, respuesta)
+            store_message(phone, RoleMensajeEnum.BOT, respuesta, wa_message_id=wamid)
 
             return nueva_novedad
         except Exception as e:
             db.session.rollback()
             print(f"Error guardando novedad: {e}")
+            return None
+
+    @staticmethod
+    def _get_or_create_state(phone: str):
+        """
+        Retorna (ConversationState, es_nuevo).
+        Si no existe, crea el estado con onboarding_step=PENDING_EMAIL.
+        """
+        state = ConversationState.query.get(phone)
+        if state is not None:
+            return state, False
+        state = ConversationState(phone=phone, onboarding_step=OnboardingStepEnum.PENDING_EMAIL)
+        db.session.add(state)
+        db.session.commit()
+        return state, True
+
+    @staticmethod
+    def _enviar_template_whatsapp(phone: str, template_name: str, lang_code: str = "es_CO"):
+        """Envia una plantilla de WhatsApp via Meta Cloud API."""
+        if not WHATSAPP_ACCESS_TOKEN or not WHATSAPP_PHONE_NUMBER_ID:
+            print(f"[WhatsApp] Credenciales no configuradas. Template '{template_name}' para {phone}")
+            return None
+
+        url = f"https://graph.facebook.com/v22.0/{WHATSAPP_PHONE_NUMBER_ID}/messages"
+        headers = {
+            "Authorization": f"Bearer {WHATSAPP_ACCESS_TOKEN}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": str(phone),
+            "type": "template",
+            "template": {
+                "name": template_name,
+                "language": {"code": lang_code},
+            },
+        }
+        try:
+            response = requests.post(url, headers=headers, json=payload, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+            wamid = data.get("messages", [{}])[0].get("id")
+            print(f"[WhatsApp] Template '{template_name}' enviado a {phone}: {wamid}")
+            return wamid
+        except Exception as e:
+            print(f"[WhatsApp] Error enviando template a {phone}: {e}")
             return None
 
     @staticmethod
@@ -178,63 +290,6 @@ class ChatService:
             print(f"[Embeddings] Busqueda semantica no disponible: {e}")
             return []
 
-    @staticmethod
-    def _enviar_whatsapp(phone, mensaje):
-        """Envia un mensaje de texto via Meta WhatsApp Cloud API. Returns wamid or None."""
-        if not WHATSAPP_ACCESS_TOKEN or not WHATSAPP_PHONE_NUMBER_ID:
-            print(f"[WhatsApp] Credenciales no configuradas. Mensaje para {phone}: {mensaje}")
-            return None
-
-        url = f"https://graph.facebook.com/v22.0/{WHATSAPP_PHONE_NUMBER_ID}/messages"
-        headers = {
-            "Authorization": f"Bearer {WHATSAPP_ACCESS_TOKEN}",
-            "Content-Type": "application/json",
-        }
-        payload = {
-            "messaging_product": "whatsapp",
-            "to": str(phone),
-            "type": "text",
-            "text": {"body": mensaje},
-        }
-        try:
-            response = requests.post(url, headers=headers, json=payload, timeout=10)
-            response.raise_for_status()
-            data = response.json()
-            wamid = data.get("messages", [{}])[0].get("id")
-            print(f"[WhatsApp] Mensaje enviado a {phone}: {wamid}")
-            return wamid
-        except Exception as e:
-            print(f"[WhatsApp] Error enviando a {phone}: {e}")
-            return None
-
-    @staticmethod
-    def _store_message(phone, role, text, wa_message_id=None):
-        """Guarda un mensaje en la base de datos e intenta generar su embedding."""
-        phone = str(phone)
-
-        # Genera embedding de forma no bloqueante (falla silenciosamente)
-        embedding = None
-        try:
-            from src.utils.embeddings import get_embedding
-            embedding = get_embedding(text)
-        except Exception as e:
-            print(f"[Embeddings] No se pudo generar embedding: {e}")
-
-        msg = ChatMessage(
-            phone=phone,
-            role=role,
-            text=text,
-            wa_message_id=wa_message_id,
-            timestamp=datetime.now(timezone.utc),
-            embedding=embedding,
-        )
-        try:
-            db.session.add(msg)
-            db.session.commit()
-        except IntegrityError:
-            db.session.rollback()
-            print(f"[Chat] Duplicate message ignored: {wa_message_id}")
-
     # ── Bot state (persistido en DB) ─────────────────────────────────────────
 
     @staticmethod
@@ -275,8 +330,8 @@ class ChatService:
     def enviar_mensaje_manual(phone, mensaje):
         """Envia un mensaje manual desde el dashboard (ignora estado del bot)."""
         phone = str(phone)
-        wamid = ChatService._enviar_whatsapp(phone, mensaje)
-        ChatService._store_message(phone, "bot", mensaje, wa_message_id=wamid)
+        wamid = enviar_whatsapp(phone, mensaje)
+        store_message(phone, "bot", mensaje, wa_message_id=wamid)
 
     @staticmethod
     def get_conversations():

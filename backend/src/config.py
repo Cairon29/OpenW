@@ -14,6 +14,11 @@ class Config:
     DB_PORT                         = int(os.getenv('DB_PORT', 5432))
     SQLALCHEMY_DATABASE_URI         = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
+    # Email configuration (SMTP Gmail)
+    GMAIL_USER                      = os.getenv('GMAIL_USER')
+    GMAIL_APP_PASSWORD              = os.getenv('GMAIL_APP_PASSWORD')
+    FRONTEND_URL                    = os.getenv('FRONTEND_URL', 'http://localhost:1111')
+
     # Whatsapp API configuration
     WHATSAPP_APP_ID                 = os.getenv('WHATSAPP_APP_ID')
     WHATSAPP_ACCESS_TOKEN           = os.getenv('WHATSAPP_ACCESS_TOKEN')

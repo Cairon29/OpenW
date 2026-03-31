@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_cors import CORS
-from src.extensions import db, login_manager, cors
+from src.extensions import db, login_manager, cors, migrate
 from src.config import DevelopmentConfig, ProductionConfig
 import os
 
@@ -22,6 +22,7 @@ def create_app():
     db.init_app(app)
     login_manager.init_app(app)
     cors.init_app(app, resources={r"/api/v1/*": {"origins": "*"}})
+    migrate.init_app(app, db, directory="src/db/migrations")
 
     # Register blueprints
     from src.modules import api_v1
