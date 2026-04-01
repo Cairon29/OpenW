@@ -1,161 +1,433 @@
-import json
 import secrets
+import time
 import requests
-from groq import Groq
 from src.extensions import db
-from src.db.models import Novedad, CategoriaNovedad, SeveridadEnum, EstadoEnum
+from src.db.models import Novedad, SeveridadEnum, EstadoEnum
+from src.db.models.vicepresidencia import Vicepresidencia
+from src.db.models.direccion import Direccion
 from src.db.models.chat_message import ChatMessage
 from src.db.models.conversation_state import ConversationState
 from src.db.models.enums import OnboardingStepEnum, RoleMensajeEnum
 from src.utils.email import send_verification_email
 from src.utils.whatsapp import enviar_whatsapp
 from src.utils.messages import store_message
-from src.modules.auth.service import AuthService
-from datetime import datetime, timezone, timedelta
+from src.utils.classification import classify_message
+from src.utils.ai_validation import validate_input
+from src.utils.menu_builders import (
+    build_vicepresidencia_menu,
+    build_direccion_menu,
+    build_confirmation_summary,
+    build_modification_menu,
+)
+from src.modules.auth.service import AuthService, VERIFICATION_TIMEOUT
+from datetime import datetime, timezone
 from src.config import config
-
-
-_groq_client = None
-
-HISTORY_WINDOW       = 10                  # mensajes anteriores que se pasan a Groq como contexto
-SIMILAR_WINDOW       = 3                   # mensajes similares recuperados via pgVector
-
-
-def _get_groq_client():
-    global _groq_client
-    if _groq_client is None:
-        api_key = config.GROQ_API_KEY
-        if not api_key:
-            print("[WARNING] GROQ_API_KEY not set. AI features will be disabled.")
-            return None
-        _groq_client = Groq(api_key=api_key)
-    return _groq_client
 
 
 # WhatsApp credentials from config
 WHATSAPP_ACCESS_TOKEN = config.WHATSAPP_ACCESS_TOKEN
 WHATSAPP_PHONE_NUMBER_ID = config.WHATSAPP_PHONE_NUMBER_ID
 
+SEVERIDAD_MAP = {
+    "critica": SeveridadEnum.CRITICA,
+    "alta": SeveridadEnum.ALTA,
+    "media": SeveridadEnum.MEDIA,
+    "baja": SeveridadEnum.BAJA,
+    "informativa": SeveridadEnum.INFO,
+}
+
+
+def _send_and_store(phone, respuesta):
+    """Helper: envía un mensaje por WhatsApp y lo almacena en la DB."""
+    wamid = enviar_whatsapp(phone, respuesta)
+    store_message(phone, RoleMensajeEnum.BOT, respuesta, wa_message_id=wamid)
+    return wamid
+
 
 class ChatService:
 
+    # ── Dispatcher ────────────────────────────────────────────────────────────
+
+    _PHASE_HANDLERS = {
+        OnboardingStepEnum.BIENVENIDA:             '_handle_bienvenida',
+        OnboardingStepEnum.PENDING_EMAIL:           '_handle_pending_email',
+        OnboardingStepEnum.PENDING_VERIFICATION:    '_handle_pending_verification',
+        OnboardingStepEnum.PENDING_VICEPRESIDENCIA: '_handle_pending_vicepresidencia',
+        OnboardingStepEnum.PENDING_DIRECCION:       '_handle_pending_direccion',
+        OnboardingStepEnum.PENDING_NOVEDAD:         '_handle_pending_novedad',
+        OnboardingStepEnum.PENDING_CONFIRMACION:    '_handle_pending_confirmacion',
+        OnboardingStepEnum.COMPLETED:               '_handle_completed',
+        OnboardingStepEnum.EXPIRED:                 '_handle_expired',
+    }
+
     @staticmethod
     def procesar_mensaje_whatsapp(phone, texto, wa_message_id=None):
-        """Procesa un mensaje entrante de WhatsApp siguiendo el flujo de onboarding."""
+        """Procesa un mensaje entrante de WhatsApp usando el dispatcher de fases."""
         phone = str(phone)
 
         estado, es_nuevo = ChatService._get_or_create_state(phone)
         store_message(phone, RoleMensajeEnum.USER, texto, wa_message_id=wa_message_id)
 
-        step = estado.onboarding_step
-
-        # ── Onboarding: solicitar email ───────────────────────────────────────
-        if step == OnboardingStepEnum.PENDING_EMAIL:
-            if es_nuevo:
-                ChatService._enviar_template_whatsapp(phone, "mensaje_bienvenida")
-
-            if AuthService.is_valid_email(texto):
-                token = secrets.token_urlsafe(32)
-                estado.email                = texto
-                estado.verification_token   = token
-                estado.verification_sent_at = datetime.now(timezone.utc)
-                estado.onboarding_step      = OnboardingStepEnum.PENDING_VERIFICATION
-                db.session.commit()
-
-                send_verification_email(texto, token)
-                respuesta = (
-                    f"Te enviamos un email a *{texto}*.\n"
-                    "Tenés *3 minutos* para verificarlo antes de que el link expire."
-                )
-            else:
-                respuesta = (
-                    "Para continuar necesitamos tu dirección de email. "
-                    "Por favor, escribila a continuación."
-                )
-
-            wamid = enviar_whatsapp(phone, respuesta)
-            store_message(phone, RoleMensajeEnum.BOT, respuesta, wa_message_id=wamid)
-            return
-
-        # ── Onboarding: esperando verificacion ───────────────────────────────
-        if step == OnboardingStepEnum.PENDING_VERIFICATION:
-            elapsed = datetime.now(timezone.utc) - estado.verification_sent_at.replace(tzinfo=timezone.utc)
-            if elapsed > VERIFICATION_TIMEOUT:
-                estado.onboarding_step    = OnboardingStepEnum.PENDING_EMAIL
-                estado.verification_token = None
-                db.session.commit()
-                respuesta = (
-                    "El tiempo de verificación venció. "
-                    "Escribí tu email nuevamente para recibir un nuevo link."
-                )
-            else:
-                respuesta = (
-                    "Todavía no verificaste tu email. "
-                    "Revisá tu bandeja de entrada y hacé click en el botón de confirmación."
-                )
-
-            wamid = enviar_whatsapp(phone, respuesta)
-            store_message(phone, RoleMensajeEnum.BOT, respuesta, wa_message_id=wamid)
-            return
-
-        # ── Estado legacy EXPIRED (reset) ────────────────────────────────────
-        if step == OnboardingStepEnum.EXPIRED:
-            estado.onboarding_step = OnboardingStepEnum.PENDING_EMAIL
-            db.session.commit()
-            respuesta = "Escribí tu email para continuar."
-            wamid = enviar_whatsapp(phone, respuesta)
-            store_message(phone, RoleMensajeEnum.BOT, respuesta, wa_message_id=wamid)
-            return
-
-        # ── Flujo normal (VERIFIED) ───────────────────────────────────────────
         if not ChatService._get_bot_state(phone):
+            return None
+
+        handler_name = ChatService._PHASE_HANDLERS.get(estado.onboarding_step)
+        if handler_name:
+            handler = getattr(ChatService, handler_name)
+            return handler(estado, phone, texto, es_nuevo)
+        return None
+
+    # ── Phase handlers ────────────────────────────────────────────────────────
+
+    @staticmethod
+    def _handle_bienvenida(estado, phone, texto, es_nuevo):
+        """Fase 1: Enviar template de bienvenida y solicitar email."""
+        ChatService._enviar_template_whatsapp(phone, "mensaje_bienvenida")
+        # Meta acepta el request rápido pero entrega la template con demora en su pipeline.
+        # Se espera 5s para garantizar que el mensaje de bienvenida llegue antes del siguiente.
+        time.sleep(5)
+        estado.onboarding_step = OnboardingStepEnum.PENDING_EMAIL
+        db.session.commit()
+
+        respuesta = (
+            "Para continuar, necesitamos tu email corporativo "
+            "(*@fiduprevisora.com.co*)."
+        )
+        _send_and_store(phone, respuesta)
+
+    @staticmethod
+    def _handle_pending_email(estado, phone, texto, es_nuevo):
+        """Fase 2: Validar email con dominio @fiduprevisora.com.co."""
+        error = AuthService.email_validation_error(texto)
+        if error:
+            ai = validate_input("email", texto, phone, {"allowed_domain": "fiduprevisora.com.co"})
+            if ai["is_valid"] and ai["extracted_value"]:
+                extracted = ai["extracted_value"]
+                if not AuthService.email_validation_error(extracted):
+                    texto = extracted
+                else:
+                    _send_and_store(phone, ai["guidance_message"] or error)
+                    return
+            else:
+                _send_and_store(phone, ai["guidance_message"] or error)
+                return
+
+        token = secrets.token_urlsafe(32)
+        estado.email                = texto.strip().lower()
+        estado.verification_token   = token
+        estado.verification_sent_at = datetime.now(timezone.utc)
+        estado.onboarding_step      = OnboardingStepEnum.PENDING_VERIFICATION
+        db.session.commit()
+
+        send_verification_email(estado.email, token)
+        respuesta = (
+            f"Te enviamos un email a *{estado.email}*.\n"
+            "Tenés *3 minutos* para verificarlo antes de que el link expire."
+        )
+        _send_and_store(phone, respuesta)
+
+    @staticmethod
+    def _handle_pending_verification(estado, phone, texto, es_nuevo):
+        """Fase 3: Esperando verificación de email."""
+        elapsed = datetime.now(timezone.utc) - estado.verification_sent_at.replace(tzinfo=timezone.utc)
+        if elapsed > VERIFICATION_TIMEOUT:
+            estado.onboarding_step    = OnboardingStepEnum.PENDING_EMAIL
+            estado.verification_token = None
+            db.session.commit()
+            respuesta = (
+                "El tiempo de verificación venció. "
+                "Escribí tu email nuevamente para recibir un nuevo link."
+            )
+        else:
+            respuesta = (
+                "Todavía no verificaste tu email. "
+                "Revisá tu bandeja de entrada y hacé click en el botón de confirmación."
+            )
+        _send_and_store(phone, respuesta)
+
+    @staticmethod
+    def _handle_pending_vicepresidencia(estado, phone, texto, es_nuevo):
+        """Fase 4: Selección de vicepresidencia desde lista numerada."""
+        vps = Vicepresidencia.query.order_by(Vicepresidencia.id).all()
+        if not vps:
+            # Sin VPs en DB, saltar a novedad
+            estado.onboarding_step = OnboardingStepEnum.PENDING_NOVEDAD
+            db.session.commit()
+            _send_and_store(phone, "Describí tu novedad de ciberseguridad.")
             return
 
-        categoria_detectada = ChatService._match_categoria_por_palabras_clave(texto)
-        analisis = ChatService._analizar_con_ia(phone, texto, categoria_detectada)
+        try:
+            seleccion = int(texto.strip())
+            if seleccion < 1 or seleccion > len(vps):
+                raise ValueError
+        except ValueError:
+            ai = validate_input("menu_selection", texto, phone, {
+                "menu_options": "\n".join(f"{i+1}. {vp.nombre}" for i, vp in enumerate(vps)),
+                "menu_type": "Vicepresidencia",
+            })
+            if ai["is_valid"] and ai["extracted_value"]:
+                try:
+                    seleccion = int(ai["extracted_value"])
+                    if seleccion < 1 or seleccion > len(vps):
+                        raise ValueError
+                except ValueError:
+                    menu = build_vicepresidencia_menu()
+                    _send_and_store(phone, ai["guidance_message"] or f"Opción no válida. {menu}")
+                    return
+            else:
+                menu = build_vicepresidencia_menu()
+                _send_and_store(phone, ai["guidance_message"] or f"Opción no válida. {menu}")
+                return
 
-        categoria = categoria_detectada
-        if not categoria:
-            nombre_ia = analisis.get("categoria")
-            if nombre_ia:
-                categoria = CategoriaNovedad.query.filter_by(categoria=nombre_ia).first()
+        vp_elegida = vps[seleccion - 1]
+        estado.fk_id_vicepresidencia = vp_elegida.id
+        estado.fk_id_direccion = None  # Reset por si cambia de VP
+        estado.onboarding_step = OnboardingStepEnum.PENDING_DIRECCION
+        db.session.commit()
 
-        categoria_id = categoria.id if categoria else None
+        menu = build_direccion_menu(vp_elegida.id)
+        if menu:
+            _send_and_store(phone, menu)
+        else:
+            # VP sin direcciones, saltar a novedad
+            estado.onboarding_step = OnboardingStepEnum.PENDING_NOVEDAD
+            db.session.commit()
+            _send_and_store(
+                phone,
+                f"*{vp_elegida.nombre}* no tiene direcciones registradas.\n\n"
+                "Describí tu novedad de ciberseguridad."
+            )
 
+    @staticmethod
+    def _handle_pending_direccion(estado, phone, texto, es_nuevo):
+        """Fase 5: Selección de dirección filtrada por vicepresidencia."""
+        dirs = Direccion.query.filter_by(
+            fk_id_vicepresidencia=estado.fk_id_vicepresidencia
+        ).order_by(Direccion.id).all()
+
+        if not dirs:
+            estado.onboarding_step = OnboardingStepEnum.PENDING_NOVEDAD
+            db.session.commit()
+            _send_and_store(phone, "Describí tu novedad de ciberseguridad.")
+            return
+
+        try:
+            seleccion = int(texto.strip())
+            if seleccion < 1 or seleccion > len(dirs):
+                raise ValueError
+        except ValueError:
+            ai = validate_input("menu_selection", texto, phone, {
+                "menu_options": "\n".join(f"{i+1}. {d.nombre}" for i, d in enumerate(dirs)),
+                "menu_type": "Dirección",
+            })
+            if ai["is_valid"] and ai["extracted_value"]:
+                try:
+                    seleccion = int(ai["extracted_value"])
+                    if seleccion < 1 or seleccion > len(dirs):
+                        raise ValueError
+                except ValueError:
+                    menu = build_direccion_menu(estado.fk_id_vicepresidencia)
+                    _send_and_store(phone, ai["guidance_message"] or f"Opción no válida. {menu}")
+                    return
+            else:
+                menu = build_direccion_menu(estado.fk_id_vicepresidencia)
+                _send_and_store(phone, ai["guidance_message"] or f"Opción no válida. {menu}")
+                return
+
+        dir_elegida = dirs[seleccion - 1]
+        estado.fk_id_direccion = dir_elegida.id
+        estado.onboarding_step = OnboardingStepEnum.PENDING_NOVEDAD
+        db.session.commit()
+
+        _send_and_store(
+            phone,
+            "Ahora describí tu novedad de ciberseguridad. "
+            "Contanos qué pasó con el mayor detalle posible."
+        )
+
+    @staticmethod
+    def _handle_pending_novedad(estado, phone, texto, es_nuevo):
+        """Fase 6: Clasificar novedad con IA y guardar resultado temporal."""
+        analisis = classify_message(phone, texto)
+
+        categoria_obj = analisis.get("categoria_obj")
+        estado.pending_titulo       = analisis.get("titulo", texto[:50])
+        estado.pending_descripcion  = texto
+        estado.pending_severidad    = analisis.get("severidad", "media")
+        estado.pending_categoria_id = categoria_obj.id if categoria_obj else None
+        estado.pending_respuesta    = analisis.get("respuesta_usuario")
+        estado.awaiting_modification = False
+        estado.onboarding_step      = OnboardingStepEnum.PENDING_CONFIRMACION
+        db.session.commit()
+
+        summary = build_confirmation_summary(estado)
+        _send_and_store(phone, summary)
+
+    @staticmethod
+    def _handle_pending_confirmacion(estado, phone, texto, es_nuevo):
+        """Fase 7: Confirmación de datos o modificación."""
+        txt = texto.strip().lower()
+
+        # ── Sub-flujo de modificación ─────────────────────────────────────
+        if estado.awaiting_modification:
+            if txt == "1":
+                # Cambiar VP → también invalida dirección
+                estado.fk_id_vicepresidencia = None
+                estado.fk_id_direccion = None
+                estado.awaiting_modification = False
+                estado.onboarding_step = OnboardingStepEnum.PENDING_VICEPRESIDENCIA
+                db.session.commit()
+                menu = build_vicepresidencia_menu()
+                _send_and_store(phone, menu or "No hay vicepresidencias registradas.")
+            elif txt == "2":
+                # Cambiar dirección (mantiene VP actual)
+                estado.fk_id_direccion = None
+                estado.awaiting_modification = False
+                estado.onboarding_step = OnboardingStepEnum.PENDING_DIRECCION
+                db.session.commit()
+                menu = build_direccion_menu(estado.fk_id_vicepresidencia)
+                _send_and_store(phone, menu or "No hay direcciones registradas.")
+            elif txt == "3":
+                # Cambiar novedad
+                estado.pending_titulo = None
+                estado.pending_descripcion = None
+                estado.pending_severidad = None
+                estado.pending_categoria_id = None
+                estado.pending_respuesta = None
+                estado.awaiting_modification = False
+                estado.onboarding_step = OnboardingStepEnum.PENDING_NOVEDAD
+                db.session.commit()
+                _send_and_store(phone, "Describí nuevamente tu novedad de ciberseguridad.")
+            else:
+                ai = validate_input("confirmation", texto, phone, {
+                    "valid_options": "1. Vicepresidencia\n2. Dirección\n3. Novedad",
+                    "mode": "modificacion",
+                })
+                if ai["is_valid"] and ai["extracted_value"] in ("1", "2", "3"):
+                    return ChatService._handle_pending_confirmacion(
+                        estado, phone, ai["extracted_value"], es_nuevo
+                    )
+                _send_and_store(phone, ai.get("guidance_message") or build_modification_menu())
+            return
+
+        # ── Flujo principal de confirmación ───────────────────────────────
+        if txt in ("1", "si", "sí", "confirmar", "si, confirmar"):
+            return ChatService._create_novedad_from_state(estado, phone)
+
+        if txt in ("2", "modificar", "no"):
+            estado.awaiting_modification = True
+            db.session.commit()
+            _send_and_store(phone, build_modification_menu())
+            return
+
+        # Input no reconocido → fallback IA
+        ai = validate_input("confirmation", texto, phone, {
+            "valid_options": "1. Confirmar\n2. Modificar",
+            "mode": "confirmacion",
+        })
+        if ai["is_valid"] and ai["extracted_value"] == "confirmar":
+            return ChatService._create_novedad_from_state(estado, phone)
+        if ai["is_valid"] and ai["extracted_value"] == "modificar":
+            estado.awaiting_modification = True
+            db.session.commit()
+            _send_and_store(phone, build_modification_menu())
+            return
+
+        summary = build_confirmation_summary(estado)
+        _send_and_store(phone, ai.get("guidance_message") or summary)
+
+    @staticmethod
+    def _handle_completed(estado, phone, texto, es_nuevo):
+        """Fase 8: Post-novedad. Permite reportar otra o despedirse."""
+        txt = texto.strip().lower()
+
+        if txt in ("si", "sí", "otra", "si, otra"):
+            estado.onboarding_step = OnboardingStepEnum.PENDING_NOVEDAD
+            db.session.commit()
+            _send_and_store(phone, "Describí tu nueva novedad de ciberseguridad.")
+            return
+
+        if txt in ("no", "no, gracias", "chau", "gracias"):
+            _send_and_store(
+                phone,
+                "¡Gracias por tu reporte! Si necesitás reportar otra novedad, "
+                "escribinos en cualquier momento."
+            )
+            return
+
+        # Cualquier otro texto → tratar como nueva novedad directamente
+        estado.onboarding_step = OnboardingStepEnum.PENDING_NOVEDAD
+        db.session.commit()
+        return ChatService._handle_pending_novedad(estado, phone, texto, es_nuevo)
+
+    @staticmethod
+    def _handle_expired(estado, phone, texto, es_nuevo):
+        """Estado legacy: resetear a PENDING_EMAIL."""
+        estado.onboarding_step = OnboardingStepEnum.PENDING_EMAIL
+        db.session.commit()
+        _send_and_store(
+            phone,
+            "Para continuar, necesitamos tu email corporativo "
+            "(*@fiduprevisora.com.co*)."
+        )
+
+    # ── Novedad creation ──────────────────────────────────────────────────────
+
+    @staticmethod
+    def _create_novedad_from_state(estado, phone):
+        """Crea la Novedad con los datos almacenados en ConversationState."""
         nueva_novedad = Novedad(
-            titulo=analisis.get("titulo", texto[:50]),
-            descripcion=texto,
+            titulo=estado.pending_titulo,
+            descripcion=estado.pending_descripcion,
             fk_id_usuario=None,
-            fk_id_categoria=categoria_id,
-            severidad=analisis.get("severidad", SeveridadEnum.MEDIA),
+            fk_id_direccion=estado.fk_id_direccion,
+            fk_id_categoria=estado.pending_categoria_id,
+            severidad=SEVERIDAD_MAP.get(estado.pending_severidad, SeveridadEnum.MEDIA),
             estado=EstadoEnum.ABIERTA,
             fecha_registro=datetime.now(timezone.utc),
         )
 
         try:
             db.session.add(nueva_novedad)
+
+            # Limpiar campos pending (pero mantener perfil: email, VP, dirección)
+            estado.pending_titulo = None
+            estado.pending_descripcion = None
+            estado.pending_severidad = None
+            estado.pending_categoria_id = None
+            estado.pending_respuesta = None
+            estado.awaiting_modification = False
+            estado.onboarding_step = OnboardingStepEnum.COMPLETED
             db.session.commit()
 
-            respuesta = analisis.get("respuesta_usuario", "Recibimos tu mensaje. En breve te responderemos.")
-            wamid = enviar_whatsapp(phone, respuesta)
-            store_message(phone, RoleMensajeEnum.BOT, respuesta, wa_message_id=wamid)
-
+            respuesta = (
+                "✅ *Tu novedad fue registrada exitosamente.*\n\n"
+                "¿Querés reportar otra novedad?\n\n"
+                "*Sí* — para reportar otra\n"
+                "*No* — para finalizar"
+            )
+            _send_and_store(phone, respuesta)
             return nueva_novedad
         except Exception as e:
             db.session.rollback()
             print(f"Error guardando novedad: {e}")
+            _send_and_store(
+                phone,
+                "Ocurrió un error al guardar tu reporte. Por favor, intentá de nuevo."
+            )
             return None
 
+    # ── State management ──────────────────────────────────────────────────────
+        # TODO: refactorizar esta clase para separar lógica de conversación (handlers) de utilidades de 
+        # estado y envío de mensajes. Quizás crear un ConversationManager para manejar estado y mensajes, 
+        # y dejar ChatService solo como orquestador de fases. 
     @staticmethod
     def _get_or_create_state(phone: str):
-        """
-        Retorna (ConversationState, es_nuevo).
-        Si no existe, crea el estado con onboarding_step=PENDING_EMAIL.
-        """
+        """Retorna (ConversationState, es_nuevo)."""
         state = ConversationState.query.get(phone)
         if state is not None:
             return state, False
-        state = ConversationState(phone=phone, onboarding_step=OnboardingStepEnum.PENDING_EMAIL)
+        state = ConversationState(phone=phone, onboarding_step=OnboardingStepEnum.BIENVENIDA)
         db.session.add(state)
         db.session.commit()
         return state, True
@@ -191,104 +463,6 @@ class ChatService:
         except Exception as e:
             print(f"[WhatsApp] Error enviando template a {phone}: {e}")
             return None
-
-    @staticmethod
-    def _match_categoria_por_palabras_clave(texto):
-        """Busca si el texto contiene la palabra clave de alguna categoria."""
-        texto_lower = texto.lower()
-        try:
-            categorias = CategoriaNovedad.query.all()
-            for cat in categorias:
-                if cat.palabra_clave and cat.palabra_clave.lower() in texto_lower:
-                    return cat
-        except Exception as e:
-            print(f"Error buscando categorias: {e}")
-        return None
-
-    @staticmethod
-    def _analizar_con_ia(phone, texto, categoria_detectada=None):
-        """
-        Llama a Groq para clasificar el mensaje y generar una respuesta.
-        Incluye historial de conversacion y contexto semantico similar via pgVector.
-        """
-        try:
-            groq_client = _get_groq_client()
-            if groq_client is None:
-                raise Exception("Groq client not available (GROQ_API_KEY not set)")
-
-            categorias = CategoriaNovedad.query.all()
-            nombres = [c.categoria for c in categorias] if categorias else ["General"]
-            categorias_str = ", ".join(f"'{n}'" for n in nombres)
-
-            # Contexto semantico: mensajes similares de otras conversaciones
-            contexto_similar = ChatService._buscar_mensajes_similares(texto, phone)
-            contexto_txt = ""
-            if contexto_similar:
-                ejemplos = "\n".join(f"- {m.text}" for m in contexto_similar)
-                contexto_txt = f"\nMensajes similares previos de otros usuarios:\n{ejemplos}\n"
-
-            system_prompt = (
-                "Eres un asistente de atencion al cliente. Analiza el mensaje y responde SOLO en JSON valido.\n"
-                "Campos requeridos:\n"
-                "1. 'titulo': resumen del mensaje en maximo 8 palabras.\n"
-                "2. 'severidad': nivel de urgencia: 'critica', 'alta', 'media' o 'baja'.\n"
-                f"3. 'categoria': clasifica en una de estas categorias: {categorias_str}.\n"
-                "4. 'respuesta_usuario': mensaje amigable y breve para enviarle al usuario por WhatsApp. "
-                "Confirma que recibiste su mensaje y orientalo segun el tema."
-                f"{contexto_txt}"
-            )
-
-            if categoria_detectada:
-                system_prompt += f"\nNota: el mensaje fue clasificado automaticamente como '{categoria_detectada.categoria}' por palabra clave."
-
-            # Historial de la conversacion actual (ultimos N mensajes)
-            historial = ChatMessage.query.filter_by(phone=phone)\
-                .order_by(ChatMessage.timestamp.desc())\
-                .limit(HISTORY_WINDOW).all()
-            historial = list(reversed(historial))
-
-            messages = [{"role": "system", "content": system_prompt}]
-            for msg in historial:
-                role = "assistant" if msg.role == "bot" else "user"
-                messages.append({"role": role, "content": msg.text})
-            # El mensaje actual va al final
-            messages.append({"role": "user", "content": texto})
-
-            chat_completion = groq_client.chat.completions.create(
-                messages=messages,
-                model="llama-3.3-70b-versatile",
-                response_format={"type": "json_object"},
-            )
-            return json.loads(chat_completion.choices[0].message.content)
-        except Exception as e:
-            print(f"Error con Groq: {e}")
-            return {
-                "titulo": "Mensaje recibido",
-                "severidad": "media",
-                "categoria": None,
-                "respuesta_usuario": "Recibimos tu mensaje. En breve te daremos mas informacion.",
-            }
-
-    @staticmethod
-    def _buscar_mensajes_similares(texto, phone_excluir, limit=SIMILAR_WINDOW):
-        """
-        Busca mensajes semanticamente similares en otras conversaciones usando pgVector.
-        Retorna una lista de ChatMessage o lista vacia si embeddings no estan disponibles.
-        """
-        try:
-            from src.utils.embeddings import get_embedding
-            embedding = get_embedding(texto)
-            similares = ChatMessage.query\
-                .filter(ChatMessage.phone != phone_excluir)\
-                .filter(ChatMessage.embedding.isnot(None))\
-                .filter(ChatMessage.role == "user")\
-                .order_by(ChatMessage.embedding.cosine_distance(embedding))\
-                .limit(limit)\
-                .all()
-            return similares
-        except Exception as e:
-            print(f"[Embeddings] Busqueda semantica no disponible: {e}")
-            return []
 
     # ── Bot state (persistido en DB) ─────────────────────────────────────────
 

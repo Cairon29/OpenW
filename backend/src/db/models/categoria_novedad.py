@@ -10,7 +10,7 @@ class CategoriaNovedad(db.Model):
     contador = db.Column(db.Integer, default=0)
     ejemplo = db.Column(db.Text, nullable=True)
     svg_icon = db.Column(db.Text, nullable=True)
-    palabra_clave = db.Column(db.String(80), nullable=True)
+    palabra_clave = db.Column(db.String(80), nullable=True) # todo: deberia ser una tabla aparte con relacion muchos a muchos, pero por ahora lo dejo asi para simplificar
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     novedades = db.relationship("Novedad", back_populates="categoria", lazy="select")
