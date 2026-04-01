@@ -114,3 +114,4 @@ class ChatController:
 
         ChatService.enviar_mensaje_manual(phone, mensaje)
         return jsonify({"status": "sent", "phone": phone}), 200
+
