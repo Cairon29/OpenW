@@ -14,6 +14,11 @@ while ! nc -z "$DB_HOST" "$DB_PORT"; do
 done
 echo "--- Database is ready! ---"
 
+# Run seed script (idempotent — safe to run on every deploy)
+echo "--- Running seed script... ---"
+python -m src.db.scripts.seed
+echo "--- Seed complete! ---"
+
 # Start Gunicorn server
 echo "--- Starting Gunicorn... ---"
 exec gunicorn \
