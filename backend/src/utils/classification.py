@@ -169,7 +169,7 @@ def classify_message(phone, texto):
 
         chat_completion = groq_client.chat.completions.create(
             messages=messages,
-            model="llama-3.3-70b-versatile",
+            model="qwen/qwen3-32b",
             response_format={"type": "json_object"},
             temperature=0.1,
         )
