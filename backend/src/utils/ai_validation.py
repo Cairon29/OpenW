@@ -99,7 +99,7 @@ def validate_input(phase, user_text, phone, context=None):
 
         completion = client.chat.completions.create(
             messages=messages,
-            model="llama-3.3-70b-versatile",
+            model="qwen/qwen3-32b",
             response_format={"type": "json_object"},
             temperature=0.0,
         )
