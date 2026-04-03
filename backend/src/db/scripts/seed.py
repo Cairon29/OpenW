@@ -34,10 +34,7 @@ def seed():
             print(f"[Seed] Vicepresidencia ya existe: {vp_nombre}")
 
         for dir_nombre in direcciones:
-            existe = Direccion.query.filter_by(
-                nombre=dir_nombre,
-                fk_id_vicepresidencia=vp.id,
-            ).first()
+            existe = Direccion.query.filter_by(nombre=dir_nombre).first()
             if not existe:
                 db.session.add(Direccion(nombre=dir_nombre, fk_id_vicepresidencia=vp.id))
                 print(f"[Seed]   Dirección creada: {dir_nombre}")
