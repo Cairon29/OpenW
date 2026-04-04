@@ -7,14 +7,14 @@ from src.extensions import db
 from src.db.models.enums import OnboardingStepEnum
 from src.utils.email import send_verification_email
 from src.utils.ai_validation import validate_input
-from src.modules.auth.service import AuthService
+from src.modules.auth.service import AuthService, ALLOWED_DOMAIN
 from .helpers import send_and_store
 
 
 def handle_pending_email(estado, phone, texto, es_nuevo):
     error = AuthService.email_validation_error(texto)
     if error:
-        ai = validate_input("email", texto, phone, {"allowed_domain": "fiduprevisora.com.co"})
+        ai = validate_input("email", texto, phone, {"allowed_domain": ALLOWED_DOMAIN})
         if ai["is_valid"] and ai["extracted_value"]:
             extracted = ai["extracted_value"]
             if not AuthService.email_validation_error(extracted):
