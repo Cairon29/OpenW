@@ -29,7 +29,8 @@ export default function DashboardPage() {
     critical: metrics?.bySeverity?.critica ?? 0,
     high: metrics?.bySeverity?.alta ?? 0,
     medium: metrics?.bySeverity?.media ?? 0,
-    low: (metrics?.bySeverity?.baja ?? 0) + (metrics?.bySeverity?.informativa ?? 0),
+    low:  metrics?.bySeverity?.baja        ?? 0,
+    info: metrics?.bySeverity?.informativa ?? 0,
   }
 
   const botMetricsMapped: BotMetrics = {
