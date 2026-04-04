@@ -1,6 +1,7 @@
 import re
 from datetime import datetime, timezone, timedelta
 from src.extensions import db
+from src.config import config
 from src.db.models.conversation_state import ConversationState
 from src.db.models.enums import OnboardingStepEnum, RoleMensajeEnum
 from src.utils.whatsapp import enviar_whatsapp
@@ -9,14 +10,14 @@ from src.utils.menu_builders import build_vicepresidencia_menu
 
 
 VERIFICATION_TIMEOUT = timedelta(minutes=3)
-ALLOWED_DOMAIN = "fiduprevisora.com.co"
+ALLOWED_DOMAIN = config.ALLOWED_EMAIL_DOMAIN
 
 
 class AuthService:
 
     @staticmethod
     def is_valid_email(text: str) -> bool:
-        """Valida si el texto tiene formato de email y dominio @fiduprevisora.com.co."""
+        """Valida si el texto tiene formato de email y dominio permitido."""
         text = text.strip().lower()
         if not re.match(r'^[\w\.\-]+@[\w\.\-]+\.\w{2,}$', text):
             return False
@@ -27,7 +28,7 @@ class AuthService:
         """Retorna mensaje de error específico o None si el email es válido."""
         text = text.strip().lower()
         if not re.match(r'^[\w\.\-]+@[\w\.\-]+\.\w{2,}$', text):
-            return "El formato del email no es válido. Ejemplo: nombre@fiduprevisora.com.co"
+            return f"El formato del email no es válido. Ejemplo: nombre@{ALLOWED_DOMAIN}"
         if not text.endswith(f"@{ALLOWED_DOMAIN}"):
             return f"Solo se permiten emails con dominio @{ALLOWED_DOMAIN}"
         return None
