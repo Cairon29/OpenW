@@ -5,12 +5,10 @@ from src.extensions import db
 from src.db.models.enums import OnboardingStepEnum
 from .helpers import send_and_store, enviar_template_whatsapp
 
-
 def handle_bienvenida(estado, phone, texto, es_nuevo):
     enviar_template_whatsapp(phone, "mensaje_bienvenida")
     # Meta acepta el request rápido pero entrega la template con demora en su pipeline.
-    # Se espera 5s para garantizar que el mensaje de bienvenida llegue antes del siguiente.
-    time.sleep(5)
+    #
     estado.onboarding_step = OnboardingStepEnum.PENDING_EMAIL
     db.session.commit()
 
