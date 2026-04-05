@@ -1,19 +1,19 @@
 """
-Clasificacion de mensajes de usuario usando Groq LLM.
+Clasificacion de mensajes de usuario usando DeepSeek V3.
 Carga el prompt template desde archivo, inyecta categorias de DB,
 y retorna clasificacion estructurada en JSON.
 """
 
 import json
 import os
-from groq import Groq
+from openai import OpenAI
 from src.extensions import db
 from src.db.models import CategoriaNovedad
 from src.db.models.chat_message import ChatMessage
 from src.config import config
 
 
-_groq_client = None
+_deepseek_client = None
 
 HISTORY_WINDOW = 10
 SIMILAR_WINDOW = 3
@@ -23,15 +23,15 @@ _TEMPLATE_PATH = os.path.join(
 )
 
 
-def get_groq_client():
-    global _groq_client
-    if _groq_client is None:
-        api_key = config.GROQ_API_KEY
+def get_deepseek_client():
+    global _deepseek_client
+    if _deepseek_client is None:
+        api_key = config.DEEPSEEK_API_KEY
         if not api_key:
-            print("[WARNING] GROQ_API_KEY not set. AI features will be disabled.")
+            print("[WARNING] DEEPSEEK_API_KEY not set. AI features will be disabled.")
             return None
-        _groq_client = Groq(api_key=api_key)
-    return _groq_client
+        _deepseek_client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
+    return _deepseek_client
 
 
 def _load_template():
@@ -136,7 +136,7 @@ def _match_categoria(nombre_ia, categorias):
 
 def classify_message(phone, texto):
     """
-    Clasifica un mensaje de usuario usando Groq LLM.
+    Clasifica un mensaje de usuario usando DeepSeek V3.
 
     Retorna dict con:
       - titulo: str
@@ -145,9 +145,9 @@ def classify_message(phone, texto):
       - respuesta_usuario: str
     """
     try:
-        groq_client = get_groq_client()
-        if groq_client is None:
-            raise Exception("Groq client not available (GROQ_API_KEY not set)")
+        client = get_deepseek_client()
+        if client is None:
+            raise Exception("DeepSeek client not available (DEEPSEEK_API_KEY not set)")
 
         categorias = CategoriaNovedad.query.all()
         if not categorias:
@@ -167,9 +167,9 @@ def classify_message(phone, texto):
             messages.append({"role": role, "content": msg.text})
         messages.append({"role": "user", "content": texto})
 
-        chat_completion = groq_client.chat.completions.create(
+        chat_completion = client.chat.completions.create(
             messages=messages,
-            model="qwen/qwen3-32b",
+            model="deepseek-chat",
             response_format={"type": "json_object"},
             temperature=0.1,
         )

@@ -27,7 +27,7 @@ export function BotEffectivenessChart({ data }: BotEffectivenessChartProps) {
             data={formattedData}
             category="name"
             value="value"
-            colors={["rose", "gray"]}
+            colors={["orange", "slate"]}
             valueFormatter={(number: number) =>
               `${number}%`
             }

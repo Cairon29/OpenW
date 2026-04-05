@@ -73,6 +73,24 @@ export const chartColors = {
     fill: "fill-[#fa8200]",
     text: "text-[#fa8200]",
   },
+  red: {
+    bg: "bg-red-500",
+    stroke: "stroke-red-500",
+    fill: "fill-red-500",
+    text: "text-red-500",
+  },
+  yellow: {
+    bg: "bg-yellow-400",
+    stroke: "stroke-yellow-400",
+    fill: "fill-yellow-400",
+    text: "text-yellow-400",
+  },
+  slate: {
+    bg: "bg-slate-500",
+    stroke: "stroke-slate-500",
+    fill: "fill-slate-500",
+    text: "text-slate-500",
+  },
 } as const satisfies {
   [color: string]: {
     [key in ColorUtility]: string

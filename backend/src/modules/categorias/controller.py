@@ -24,3 +24,10 @@ class CategoriasController:
     def listar():
         items = CategoriasService.obtener_todas()
         return jsonify(categorias_schema.dump(items)), 200
+
+    @staticmethod
+    def eliminar(id):
+        eliminado = CategoriasService.eliminar_categoria(id)
+        if not eliminado:
+            return jsonify({"error": "Categoría no encontrada"}), 404
+        return jsonify({"status": "deleted", "id": id}), 200

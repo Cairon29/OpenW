@@ -4,7 +4,7 @@ class Config:
     # General configuration
     SECRET_KEY                      = os.getenv('SECRET_KEY', "una-clave-secreta-de-respaldo")
     BACKEND_PORT                    = int(os.getenv('BACKEND_PORT', 2222))
-    GROQ_API_KEY                    = os.getenv('GROQ_API_KEY')
+    DEEPSEEK_API_KEY                = os.getenv('DEEPSEEK_API_KEY')
 
     # Database configuration
     DB_USER                         = os.getenv('DB_USER', 'OpenWAdmin')

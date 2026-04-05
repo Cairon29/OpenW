@@ -72,12 +72,17 @@ def get_conversations():
         msgs = ChatMessage.query.filter_by(phone=phone).order_by(ChatMessage.timestamp).all()
         messages = [{"role": m.role, "text": m.text, "time": m.timestamp.isoformat()} for m in msgs]
         last = messages[-1] if messages else {}
+
+        # Fetch profile data from conversation state
+        state = ConversationState.query.get(phone)
         result.append({
             "phone": phone,
             "bot_active": _get_bot_state(phone),
             "last_message": last.get("text", ""),
             "last_time": last.get("time", ""),
             "messages": messages,
+            "profile_name": state.wa_profile_name if state else None,
+            "profile_photo_url": state.wa_profile_photo_url if state else None,
         })
     return result
 

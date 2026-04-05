@@ -97,7 +97,7 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-m uppercase tracking-wider text-muted-foreground font-color-white">
+          <SidebarGroupLabel className="text-m uppercase tracking-wider text-[#fab568] font-semibold font-color-white">
             Principal
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -107,7 +107,7 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     isActive={pathname === item.href}
-                    className="transition-colors"
+                    className="transition-colors border border-transparent dark:hover:bg-[#fab568]/15 dark:hover:border-[#fab568]/40"
                   >
                     <Link href={item.href}>
 
@@ -121,7 +121,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-[#fab568] font-semibold">
             Configuración
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -131,7 +131,7 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     isActive={pathname === item.href}
-                    className="transition-colors"
+                    className="transition-colors border border-transparent dark:hover:bg-[#fab568]/15 dark:hover:border-[#fab568]/40"
                   >
                     <Link href={item.href}>
 
@@ -145,7 +145,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-[#fab568] font-semibold">
             Panel de administracion
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -158,7 +158,7 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     isActive={pathname === item.href}
-                    className="transition-colors"
+                    className="transition-colors border border-transparent dark:hover:bg-[#fab568]/15 dark:hover:border-[#fab568]/40"
                   >
                     <Link href={item.href}>
 

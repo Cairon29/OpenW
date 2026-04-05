@@ -37,6 +37,11 @@ class ConversationState(db.Model):
     # Flag para sub-flujo de modificación en confirmación
     awaiting_modification = db.Column(db.Boolean, default=False)
 
+    # WhatsApp profile data
+    wa_profile_name      = db.Column(db.String(120), nullable=True)
+    wa_profile_photo_url = db.Column(db.Text, nullable=True)
+    wa_photo_fetched_at  = db.Column(db.DateTime, nullable=True)
+
     # Relationships
     vicepresidencia   = db.relationship("Vicepresidencia", foreign_keys=[fk_id_vicepresidencia])
     direccion         = db.relationship("Direccion", foreign_keys=[fk_id_direccion])

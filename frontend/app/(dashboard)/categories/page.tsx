@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Plus, Search } from "lucide-react"
 import type { Category } from "@/lib/types"
-import { getCategorias, createCategoria } from "@/lib/api"
+import { getCategorias, createCategoria, deleteCategoria } from "@/lib/api"
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([])
@@ -43,8 +43,13 @@ export default function CategoriesPage() {
     }
   }
 
-  const handleDeleteCategory = (category: Category) => {
-    setCategories((prev) => prev.filter((c) => c.id !== category.id))
+  const handleDeleteCategory = async (category: Category) => {
+    try {
+      await deleteCategoria(category.id)
+      setCategories((prev) => prev.filter((c) => c.id !== category.id))
+    } catch {
+      setError("No se pudo eliminar la categoría")
+    }
   }
 
   return (

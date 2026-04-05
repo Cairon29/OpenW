@@ -12,6 +12,6 @@ SQLAlchemy==2.0.48
 typing_extensions==4.15.0
 marshmallow
 flask-marshmallow
-groq
+openai
 requests
 sentence-transformers

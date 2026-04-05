@@ -102,6 +102,13 @@ export async function createCategoria(data: {
   return mapCategoria(created as Record<string, unknown>)
 }
 
+export async function deleteCategoria(id: string): Promise<void> {
+  const res = await fetch(`${API_URL}/api/v1/categorias/categorias/${id}`, {
+    method: "DELETE",
+  })
+  if (!res.ok) throw new Error("Error al eliminar categoría")
+}
+
 // ── Bot / Conversaciones ──────────────────────────────────────────────────────
 
 export interface BotMessage {
@@ -116,6 +123,8 @@ export interface BotConversation {
   last_message: string
   last_time: string
   messages: BotMessage[]
+  profile_name?: string | null
+  profile_photo_url?: string | null
 }
 
 export async function getBotConversations(): Promise<BotConversation[]> {
