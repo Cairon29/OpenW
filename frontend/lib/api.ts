@@ -116,6 +116,8 @@ export interface BotConversation {
   last_message: string
   last_time: string
   messages: BotMessage[]
+  profile_name?: string | null
+  profile_photo_url?: string | null
 }
 
 export async function getBotConversations(): Promise<BotConversation[]> {

@@ -46,19 +46,25 @@ class ChatService:
     }
 
     @staticmethod
-    def procesar_mensaje_whatsapp(phone, texto, wa_message_id=None):
+    def procesar_mensaje_whatsapp(phone, texto, wa_message_id=None, profile_name=None):
         """Procesa un mensaje entrante de WhatsApp usando el dispatcher de fases."""
         phone = str(phone)
 
         estado, es_nuevo = ChatService._get_or_create_state(phone)
         store_message(phone, RoleMensajeEnum.USER, texto, wa_message_id=wa_message_id)
 
+        # Update WhatsApp profile data (dirties ORM, no commit)
+        ChatService._update_profile(estado, profile_name)
+
         if not _get_bot_state(phone):
+            db.session.commit()  # flush profile changes when bot is off
             return None
 
         handler = ChatService._PHASE_HANDLERS.get(estado.onboarding_step)
         if handler:
-            return handler(estado, phone, texto, es_nuevo)
+            return handler(estado, phone, texto, es_nuevo)  # handler commits all
+
+        db.session.commit()  # fallback commit if no handler matched
         return None
 
     # ── State management ──────────────────────────────────────────────────────
@@ -73,6 +79,14 @@ class ChatService:
         db.session.add(state)
         db.session.commit()
         return state, True
+
+    # ── Profile management ─────────────────────────────────────────────────────
+
+    @staticmethod
+    def _update_profile(state, profile_name):
+        """Update WhatsApp profile name if provided. No commit — handler flushes."""
+        if profile_name and state.wa_profile_name != profile_name:
+            state.wa_profile_name = profile_name
 
     # ── Dashboard (delegado a utils/dashboard.py) ─────────────────────────────
 

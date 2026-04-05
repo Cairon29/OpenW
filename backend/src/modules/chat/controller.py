@@ -1,5 +1,6 @@
 import hmac
 import hashlib
+import traceback
 from flask import request, jsonify
 from .service import ChatService
 from src.config import config
@@ -50,6 +51,12 @@ class ChatController:
                 for change in entry.get("changes", []):
                     value = change.get("value", {})
 
+                    # Extract profile name from contacts array (sent by Meta on every message)
+                    contacts = value.get("contacts", [])
+                    profile_name = None
+                    if contacts:
+                        profile_name = contacts[0].get("profile", {}).get("name")
+
                     # Handle incoming messages
                     for message in value.get("messages", []):
                         msg_type = message.get("type")
@@ -63,7 +70,11 @@ class ChatController:
                             if texto:
                                 wa_message_id = message.get("id")
                                 print(f"[Webhook] Mensaje de {phone}: {texto}")
-                                ChatService.procesar_mensaje_whatsapp(phone, texto, wa_message_id=wa_message_id)
+                                ChatService.procesar_mensaje_whatsapp(
+                                    phone, texto,
+                                    wa_message_id=wa_message_id,
+                                    profile_name=profile_name,
+                                )
 
                     # Handle message status updates (sent/delivered/read)
                     for status_update in value.get("statuses", []):
@@ -73,7 +84,7 @@ class ChatController:
                             ChatService.update_message_status(wamid, status)
 
         except Exception as e:
-            print(f"[Webhook] Error procesando mensaje: {e}")
+            print(f"[Webhook] Error procesando mensaje:\n{traceback.format_exc()}")
 
         return jsonify({"status": "ok"}), 200
 
