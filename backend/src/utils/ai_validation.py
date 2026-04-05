@@ -1,12 +1,12 @@
 """
-Validacion de input por fase usando Groq LLM como fallback.
+Validacion de input por fase usando DeepSeek V3 como fallback.
 Solo se llama cuando la validacion basica falla.
 Retorna JSON unificado: {is_valid, extracted_value, guidance_message}.
 """
 
 import json
 import os
-from src.utils.classification import get_groq_client
+from src.utils.classification import get_deepseek_client
 from src.db.models.chat_message import ChatMessage
 
 VALIDATION_HISTORY = 2
@@ -53,7 +53,7 @@ def _inject_context(template, context):
 
 
 def _build_messages(system_prompt, phone, user_text):
-    """Construye la lista de mensajes para Groq con historial minimo."""
+    """Construye la lista de mensajes para DeepSeek con historial minimo."""
     messages = [{"role": "system", "content": system_prompt}]
 
     historial = ChatMessage.query.filter_by(phone=phone)\
@@ -86,7 +86,7 @@ def validate_input(phase, user_text, phone, context=None):
         {"is_valid": bool, "extracted_value": str|None, "guidance_message": str|None}
     """
     try:
-        client = get_groq_client()
+        client = get_deepseek_client()
         if client is None:
             return dict(_SAFE_FALLBACK)
 
@@ -99,7 +99,7 @@ def validate_input(phase, user_text, phone, context=None):
 
         completion = client.chat.completions.create(
             messages=messages,
-            model="qwen/qwen3-32b",
+            model="deepseek-chat",
             response_format={"type": "json_object"},
             temperature=0.0,
         )
