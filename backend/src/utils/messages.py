@@ -33,3 +33,13 @@ def store_message(phone, role, text, wa_message_id=None):
     except IntegrityError:
         db.session.rollback()
         print(f"[Chat] Duplicate message ignored: {wa_message_id}")
+        return
+
+    from src.modules.chat.events import publish
+    publish({
+        "type": "new_message",
+        "phone": phone,
+        "role": role.value if hasattr(role, "value") else str(role),
+        "text": text,
+        "time": msg.timestamp.isoformat(),
+    })
