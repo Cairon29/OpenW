@@ -1,6 +1,6 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/layout/card"
 import { SeverityBadge } from "./severity-badge"
 import { StatusBadge } from "./status-badge"
 import type { VulnerabilityCase } from "@/lib/types"

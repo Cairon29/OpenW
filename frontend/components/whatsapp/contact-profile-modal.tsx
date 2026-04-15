@@ -1,7 +1,7 @@
 "use client"
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/data-display/avatar"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/overlay/dialog"
 import { type BotConversation } from "@/lib/api"
 import { getInitials, formatPhone } from "./utils"
 

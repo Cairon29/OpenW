@@ -2,11 +2,11 @@
 
 import * as React from "react"
 import { Search, Archive, Filter, MessageSquare } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/data-display/avatar"
+import { Input } from "@/components/ui/forms/input"
+import { Button } from "@/components/ui/forms/button"
+import { ScrollArea } from "@/components/ui/layout/scroll-area"
+import { Badge } from "@/components/ui/data-display/badge"
 import { type BotConversation } from "@/lib/api"
 import { formatTime, getInitials } from "./utils"
 

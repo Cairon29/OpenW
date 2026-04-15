@@ -8,13 +8,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
+} from "@/components/ui/overlay/dialog"
+import { Button } from "@/components/ui/forms/button"
+import { Input } from "@/components/ui/forms/input"
+import { Textarea } from "@/components/ui/forms/textarea"
+import { Badge } from "@/components/ui/data-display/badge"
 import { X, Plus } from "lucide-react"
-import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
+import { FieldGroup, Field, FieldLabel } from "@/components/ui/forms/field"
 
 interface CategoryFormProps {
   open: boolean

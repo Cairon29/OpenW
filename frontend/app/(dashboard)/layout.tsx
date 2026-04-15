@@ -1,8 +1,8 @@
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/layout/sidebar"
 import { AppSidebar } from "@/components/dashboard/app-sidebar"
-import { Separator } from "@/components/ui/separator"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Separator } from "@/components/ui/layout/separator"
+import { Button } from "@/components/ui/forms/button"
+import { Avatar, AvatarFallback } from "@/components/ui/data-display/avatar"
 import { LogOut } from "lucide-react"
 import Link from "next/link"
 

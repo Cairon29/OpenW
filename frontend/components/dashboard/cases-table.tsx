@@ -7,13 +7,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/data-display/table"
 import { SeverityBadge } from "./severity-badge"
 import { StatusBadge } from "./status-badge"
 import type { VulnerabilityCase } from "@/lib/types"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/forms/button"
 import { Eye, MoreHorizontal } from "lucide-react"
 import {
   DropdownMenu,
@@ -22,7 +22,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/overlay/dropdown-menu"
 
 interface CasesTableProps {
   cases: VulnerabilityCase[]

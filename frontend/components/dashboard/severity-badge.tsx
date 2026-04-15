@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge"
+import { Badge } from "@/components/ui/data-display/badge"
 import { cn } from "@/lib/utils"
 import type { Severity } from "@/lib/types"
 

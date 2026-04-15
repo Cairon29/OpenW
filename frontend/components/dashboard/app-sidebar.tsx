@@ -21,9 +21,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarFooter,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/layout/sidebar"
 
-import { ThemeToggle } from "@/components/ui/theme-toggle"
+import { ThemeToggle } from "@/components/ui/utility/theme-toggle"
 
 const navigationItems = [
   {

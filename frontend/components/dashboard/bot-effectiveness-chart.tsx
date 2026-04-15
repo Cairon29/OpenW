@@ -1,7 +1,7 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { DonutChart } from "@/components/ui/donut-chart"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/layout/card"
+import { DonutChart } from "@/components/ui/data-display/donut-chart"
 import type { BotMetrics } from "@/lib/types"
 
 interface BotEffectivenessChartProps {
