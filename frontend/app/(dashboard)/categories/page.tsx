@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react"
 import { CategoryCard } from "@/components/dashboard/category-card"
 import { CategoryForm } from "@/components/dashboard/category-form"
+import { PageHeader } from "@/components/dashboard/page-header"
+import { EmptyState } from "@/components/dashboard/empty-state"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Plus, Search } from "lucide-react"
@@ -54,18 +56,16 @@ export default function CategoriesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-bold text-foreground">Categorías</h1>
-          <p className="text-muted-foreground">
-            Gestiona las categorías y palabras clave para clasificación automática
-          </p>
-        </div>
-        <Button className="gap-2" onClick={() => setIsFormOpen(true)}>
-          <Plus className="h-4 w-4" />
-          Nueva Categoría
-        </Button>
-      </div>
+      <PageHeader
+        title="Categorías"
+        description="Gestiona las categorías y palabras clave para clasificación automática"
+        action={
+          <Button className="gap-2" onClick={() => setIsFormOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Nueva Categoría
+          </Button>
+        }
+      />
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -80,7 +80,7 @@ export default function CategoriesPage() {
       {loading && <p className="text-muted-foreground text-sm">Cargando categorías...</p>}
       {error && <p className="text-destructive text-sm">{error}</p>}
 
-      {!loading && (
+      {!loading && filteredCategories.length > 0 && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredCategories.map((category) => (
             <CategoryCard
@@ -93,13 +93,15 @@ export default function CategoriesPage() {
       )}
 
       {!loading && filteredCategories.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <p className="text-muted-foreground mb-4">No se encontraron categorías</p>
-          <Button variant="outline" onClick={() => setIsFormOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Crear primera categoría
-          </Button>
-        </div>
+        <EmptyState
+          message="No se encontraron categorías"
+          action={
+            <Button variant="outline" onClick={() => setIsFormOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Crear primera categoría
+            </Button>
+          }
+        />
       )}
 
       <CategoryForm

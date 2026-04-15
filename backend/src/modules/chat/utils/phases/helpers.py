@@ -2,18 +2,14 @@
 Helpers compartidos por todos los phase handlers.
 """
 
+import os
 import requests
 from src.db.models import Novedad, SeveridadEnum, EstadoEnum
 from src.db.models.enums import OnboardingStepEnum, RoleMensajeEnum
 from src.extensions import db
 from src.utils.whatsapp import enviar_whatsapp
 from src.utils.messages import store_message
-from src.config import config
 from datetime import datetime, timezone
-
-
-WHATSAPP_ACCESS_TOKEN = config.WHATSAPP_ACCESS_TOKEN
-WHATSAPP_PHONE_NUMBER_ID = config.WHATSAPP_PHONE_NUMBER_ID
 
 SEVERIDAD_MAP = {
     "critica": SeveridadEnum.CRITICA,
@@ -33,13 +29,15 @@ def send_and_store(phone, respuesta):
 
 def enviar_template_whatsapp(phone, template_name, lang_code="es_CO"):
     """Envia una plantilla de WhatsApp via Meta Cloud API."""
-    if not WHATSAPP_ACCESS_TOKEN or not WHATSAPP_PHONE_NUMBER_ID:
+    token = os.getenv('WHATSAPP_ACCESS_TOKEN')
+    phone_id = os.getenv('WHATSAPP_PHONE_NUMBER_ID')
+    if not token or not phone_id:
         print(f"[WhatsApp] Credenciales no configuradas. Template '{template_name}' para {phone}")
         return None
 
-    url = f"https://graph.facebook.com/v22.0/{WHATSAPP_PHONE_NUMBER_ID}/messages"
+    url = f"https://graph.facebook.com/v22.0/{phone_id}/messages"
     headers = {
-        "Authorization": f"Bearer {WHATSAPP_ACCESS_TOKEN}",
+        "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
     }
     payload = {

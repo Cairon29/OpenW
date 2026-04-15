@@ -2,23 +2,21 @@
 Utilidad para envio de mensajes de texto via Meta WhatsApp Cloud API.
 """
 
+import os
 import requests
-from src.config import config
-
-
-WHATSAPP_ACCESS_TOKEN = config.WHATSAPP_ACCESS_TOKEN
-WHATSAPP_PHONE_NUMBER_ID = config.WHATSAPP_PHONE_NUMBER_ID
 
 
 def enviar_whatsapp(phone, mensaje):
     """Envia un mensaje de texto via Meta WhatsApp Cloud API. Returns wamid or None."""
-    if not WHATSAPP_ACCESS_TOKEN or not WHATSAPP_PHONE_NUMBER_ID:
+    token = os.getenv('WHATSAPP_ACCESS_TOKEN')
+    phone_id = os.getenv('WHATSAPP_PHONE_NUMBER_ID')
+    if not token or not phone_id:
         print(f"[WhatsApp] Credenciales no configuradas. Mensaje para {phone}: {mensaje}")
         return None
 
-    url = f"https://graph.facebook.com/v22.0/{WHATSAPP_PHONE_NUMBER_ID}/messages"
+    url = f"https://graph.facebook.com/v22.0/{phone_id}/messages"
     headers = {
-        "Authorization": f"Bearer {WHATSAPP_ACCESS_TOKEN}",
+        "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
     }
     payload = {

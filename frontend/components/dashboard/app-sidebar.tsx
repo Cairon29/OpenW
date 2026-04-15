@@ -26,44 +26,18 @@ import {
 import { ThemeToggle } from "@/components/ui/theme-toggle"
 
 const navigationItems = [
-  {
-    title: "Dashboard",
-    href: "/",
-
-  },
-  {
-    title: "Casos",
-    href: "/cases",
-
-  },
-  {
-    title: "Categorías",
-    href: "/categories",
-
-  },
+  { title: "Dashboard",   href: "/",           icon: LayoutDashboard },
+  { title: "Casos",       href: "/cases",      icon: AlertTriangle },
+  { title: "Categorías",  href: "/categories", icon: FolderOpen },
 ]
 
 const secondaryItems = [
-  {
-    title: "WhatsApp Bot",
-    href: "/bot",
-
-  },
-  {
-    title: "Configuración",
-    href: "/settings",
-
-  },
+  { title: "WhatsApp Bot",  href: "/bot",      icon: MessageSquare },
+  { title: "Configuración", href: "/settings", icon: Settings },
 ]
 
-
 const TerceroItems = [
-  {
-    title: "Reportes",
-    href: "/reports",
-
-  },
-
+  { title: "Reportes", href: "/reports", icon: Shield },
 ]
 
 
@@ -110,7 +84,7 @@ export function AppSidebar() {
                     className="transition-colors border border-transparent dark:hover:bg-[#fab568]/15 dark:hover:border-[#fab568]/40"
                   >
                     <Link href={item.href}>
-
+                      <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -134,7 +108,7 @@ export function AppSidebar() {
                     className="transition-colors border border-transparent dark:hover:bg-[#fab568]/15 dark:hover:border-[#fab568]/40"
                   >
                     <Link href={item.href}>
-
+                      <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -146,11 +120,8 @@ export function AppSidebar() {
 
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs uppercase tracking-wider text-[#fab568] font-semibold">
-            Panel de administracion
+            Panel de administración
           </SidebarGroupLabel>
-          <SidebarGroupContent>
-
-          </SidebarGroupContent>
           <SidebarGroupContent>
             <SidebarMenu>
               {TerceroItems.map((item) => (
@@ -161,7 +132,7 @@ export function AppSidebar() {
                     className="transition-colors border border-transparent dark:hover:bg-[#fab568]/15 dark:hover:border-[#fab568]/40"
                   >
                     <Link href={item.href}>
-
+                      <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>

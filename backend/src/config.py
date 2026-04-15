@@ -12,7 +12,12 @@ class Config:
     DB_NAME                         = os.getenv('DB_NAME', 'OpenW')
     DB_HOST                         = os.getenv('DB_HOST', 'db')
     DB_PORT                         = int(os.getenv('DB_PORT', 5432))
-    SQLALCHEMY_DATABASE_URI         = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    SQLALCHEMY_DATABASE_URI         = (
+        f"postgresql://{os.getenv('DB_USER', 'OpenWAdmin')}:"
+        f"{os.getenv('DB_PASSWORD', 'Apex_999')}@"
+        f"{os.getenv('DB_HOST', 'db')}:{os.getenv('DB_PORT', 5432)}/"
+        f"{os.getenv('DB_NAME', 'OpenW')}"
+    )
 
     # Email configuration (SMTP Gmail)
     GMAIL_USER                      = os.getenv('GMAIL_USER')

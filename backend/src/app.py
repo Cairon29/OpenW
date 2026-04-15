@@ -31,7 +31,13 @@ def create_app():
     # Create all database tables
     with app.app_context():
         import src.db.models  # ensure all models are registered
+        with db.engine.connect() as conn:
+            conn.execute(db.text('CREATE EXTENSION IF NOT EXISTS vector'))
+            conn.commit()
         db.create_all()
+        # Seed default system configurations (idempotent — skips existing keys)
+        from src.modules.configuracion.service import ConfiguracionService
+        ConfiguracionService.seed_defaults()
         db.engine.dispose()  # close connections so forked workers get fresh ones
 
     # Health check endpoint

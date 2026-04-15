@@ -1,12 +1,9 @@
+import os
 import hmac
 import hashlib
 import traceback
 from flask import request, jsonify
 from .service import ChatService
-from src.config import config
-
-WHATSAPP_VERIFY_TOKEN = config.WHATSAPP_VERIFY_TOKEN or "openw_webhook_secret_2024"
-WHATSAPP_APP_SECRET = config.WHATSAPP_APP_SECRET
 
 
 class ChatController:
@@ -14,11 +11,12 @@ class ChatController:
 
     @staticmethod
     def verificar_webhook():
+        verify_token = os.getenv('WHATSAPP_VERIFY_TOKEN', 'openw_webhook_secret_2024')
         mode = request.args.get('hub.mode')
         token = request.args.get('hub.verify_token')
         challenge = request.args.get('hub.challenge')
 
-        if mode == 'subscribe' and token == WHATSAPP_VERIFY_TOKEN:
+        if mode == 'subscribe' and token == verify_token:
             print("[Webhook] Verificacion exitosa")
             return challenge, 200
 
@@ -28,12 +26,13 @@ class ChatController:
     @staticmethod
     def recibir_mensaje():
         # Signature verification (skip if APP_SECRET not configured)
-        if WHATSAPP_APP_SECRET:
+        app_secret = os.getenv('WHATSAPP_APP_SECRET')
+        if app_secret:
             signature = request.headers.get("X-Hub-Signature-256", "")
             if not signature:
                 return jsonify({"error": "Missing signature"}), 401
-            expected = "sha256=" + hmac.new(
-                WHATSAPP_APP_SECRET.encode(),
+            expected = "sha256=" + hmac.HMAC(
+                app_secret.encode(),
                 request.get_data(),
                 hashlib.sha256
             ).hexdigest()
