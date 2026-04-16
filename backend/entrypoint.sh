@@ -22,9 +22,10 @@ echo "--- Seed complete! ---"
 # Start Gunicorn server
 echo "--- Starting Gunicorn... ---"
 exec gunicorn \
+  --worker-class gevent \
+  --workers 1 \
+  --worker-connections 1000 \
   --timeout 310 \
-  --graceful-timeout 310 \
-  --workers 4 \
-  --preload \
+  --graceful-timeout 30 \
   --bind 0.0.0.0:2222 \
   "src:create_app()"

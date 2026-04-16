@@ -46,6 +46,21 @@ class ChatService:
     }
 
     @staticmethod
+    def enviar_indicador_escribiendo(phone, wa_message_id=None):
+        """Mark last user message as read, show typing bubble on WA + CRM."""
+        phone = str(phone)
+        if not _get_bot_state(phone):
+            return
+
+        from src.modules.chat.events import publish
+        publish({"type": "bot_typing_start", "phone": phone})
+
+        if wa_message_id:
+            from src.utils.whatsapp import enviar_indicador_typing
+            enviar_indicador_typing(wa_message_id)
+
+
+    @staticmethod
     def procesar_mensaje_whatsapp(phone, texto, wa_message_id=None, profile_name=None):
         """Procesa un mensaje entrante de WhatsApp usando el dispatcher de fases."""
         phone = str(phone)
@@ -60,12 +75,18 @@ class ChatService:
             db.session.commit()  # flush profile changes when bot is off
             return None
 
-        handler = ChatService._PHASE_HANDLERS.get(estado.onboarding_step)
-        if handler:
-            return handler(estado, phone, texto, es_nuevo)  # handler commits all
+        # Typing indicator: WA (read + typing bubble) + CRM SSE
+        ChatService.enviar_indicador_escribiendo(phone, wa_message_id)
 
-        db.session.commit()  # fallback commit if no handler matched
-        return None
+        handler = ChatService._PHASE_HANDLERS.get(estado.onboarding_step)
+        try:
+            if handler:
+                return handler(estado, phone, texto, es_nuevo)  # handler commits all
+            db.session.commit()  # fallback commit if no handler matched
+            return None
+        finally:
+            from src.modules.chat.events import publish
+            publish({"type": "bot_typing_stop", "phone": phone})
 
     # ── State management ──────────────────────────────────────────────────────
 

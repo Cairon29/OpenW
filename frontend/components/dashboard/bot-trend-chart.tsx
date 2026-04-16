@@ -1,7 +1,7 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { AreaChart } from "@/components/ui/area-chart"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/layout/card"
+import { AreaChart } from "@/components/ui/data-display/area-chart"
 import type { BotMetrics } from "@/lib/types"
 
 interface BotTrendChartProps {
@@ -28,7 +28,7 @@ export function BotTrendChart({ data }: BotTrendChartProps) {
             data={formattedData}
             index="date"
             categories={["Conversaciones por día"]}
-            colors={["rose"]}
+            colors={["pink"]}
             valueFormatter={(number: number) =>
               Intl.NumberFormat("us").format(number).toString()
             }

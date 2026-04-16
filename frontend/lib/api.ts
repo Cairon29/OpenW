@@ -125,6 +125,7 @@ export interface BotConversation {
   messages: BotMessage[]
   profile_name?: string | null
   profile_photo_url?: string | null
+  is_typing?: boolean
 }
 
 export async function getBotConversations(): Promise<BotConversation[]> {

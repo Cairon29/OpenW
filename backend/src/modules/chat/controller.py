@@ -1,9 +1,16 @@
 import os
 import hmac
 import hashlib
+import json
 import traceback
-from flask import request, jsonify
+from flask import request, jsonify, Response, stream_with_context
+from gevent.queue import Empty
 from .service import ChatService
+from .events import subscribe, unsubscribe, get_current_seq
+from src.config import config
+
+WHATSAPP_VERIFY_TOKEN = config.WHATSAPP_VERIFY_TOKEN or "openw_webhook_secret_2024"
+WHATSAPP_APP_SECRET = config.WHATSAPP_APP_SECRET
 
 
 class ChatController:
@@ -99,6 +106,44 @@ class ChatController:
     @staticmethod
     def get_conversations():
         return jsonify(ChatService.get_conversations()), 200
+
+    @staticmethod
+    def stream_conversations():
+        def generate():
+            q = subscribe()
+            try:
+                # Read seq BEFORE the DB query to close the race window:
+                # any message committed during the snapshot query will have
+                # seq > snapshot_seq, making it detectable as a duplicate on
+                # the client side.
+                snapshot_seq = get_current_seq()
+                convs = ChatService.get_conversations()
+                snapshot = {
+                    "seq": snapshot_seq,
+                    "type": "snapshot",
+                    "conversations": convs,
+                }
+                yield f"retry: 5000\nevent: snapshot\ndata: {json.dumps(snapshot)}\n\n"
+
+                while True:
+                    try:
+                        event = q.get(timeout=15)
+                        yield f"event: {event['type']}\ndata: {json.dumps(event)}\n\n"
+                    except Empty:
+                        yield ": ping\n\n"
+            except GeneratorExit:
+                pass
+            finally:
+                unsubscribe(q)
+
+        response = Response(
+            stream_with_context(generate()),
+            mimetype="text/event-stream",
+        )
+        response.headers["Cache-Control"] = "no-cache"
+        response.headers["X-Accel-Buffering"] = "no"
+        response.headers["Connection"] = "keep-alive"
+        return response
 
     @staticmethod
     def toggle_bot():

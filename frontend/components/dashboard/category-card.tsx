@@ -1,8 +1,8 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/layout/card"
+import { Badge } from "@/components/ui/data-display/badge"
+import { Button } from "@/components/ui/forms/button"
 import { Edit2, Trash2 } from "lucide-react"
 import type { Category } from "@/lib/types"
 import { format } from "date-fns"

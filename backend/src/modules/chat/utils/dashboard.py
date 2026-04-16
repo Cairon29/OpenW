@@ -10,7 +10,7 @@ from src.extensions import db
 from src.db.models import Novedad
 from src.db.models.chat_message import ChatMessage
 from src.db.models.conversation_state import ConversationState
-from src.db.models.enums import OnboardingStepEnum
+from src.db.models.enums import OnboardingStepEnum, RoleMensajeEnum
 from src.utils.whatsapp import enviar_whatsapp
 from src.utils.messages import store_message
 
@@ -32,6 +32,10 @@ def toggle_bot(phone):
         state.bot_active = not state.bot_active
         state.updated_at = datetime.now(timezone.utc)
     db.session.commit()
+
+    from src.modules.chat.events import publish
+    publish({"type": "bot_toggle", "phone": phone, "bot_active": state.bot_active})
+
     return state.bot_active
 
 
@@ -70,7 +74,7 @@ def get_conversations():
     result = []
     for phone, _ in phones:
         msgs = ChatMessage.query.filter_by(phone=phone).order_by(ChatMessage.timestamp).all()
-        messages = [{"role": m.role, "text": m.text, "time": m.timestamp.isoformat()} for m in msgs]
+        messages = [{"role": m.role.value, "text": m.text, "time": m.timestamp.isoformat()} for m in msgs]
         last = messages[-1] if messages else {}
 
         # Fetch profile data from conversation state
@@ -101,11 +105,11 @@ def get_bot_metrics():
         func.count(func.distinct(ChatMessage.phone))
     ).scalar() or 0
 
-    bot_messages = ChatMessage.query.filter_by(role="bot").count()
+    bot_messages = ChatMessage.query.filter_by(role=RoleMensajeEnum.BOT).count()
 
     responded = db.session.query(
         func.count(func.distinct(ChatMessage.phone))
-    ).filter(ChatMessage.role == "bot").scalar() or 0
+    ).filter(ChatMessage.role == RoleMensajeEnum.BOT).scalar() or 0
 
     response_rate = round((responded / total_conversations * 100) if total_conversations else 0)
 
