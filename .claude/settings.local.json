@@ -10,7 +10,9 @@
       "Bash(docker rm:*)",
       "Bash(cat:*)",
       "Bash(find /c/Users/ccair/OneDrive/Documentos/programming_stuff_5.0/app_tests/whatsapp-business-jaspers-market -type f \\\\\\(-name *.html -o -name *.css -o -name *.vue -o -name *.jsx \\\\\\))",
-      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f''''Messages: {len\\(d[0][\"\"messages\"\"]\\)}''''\\)\")"
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f''''Messages: {len\\(d[0][\"\"messages\"\"]\\)}''''\\)\")",
+      "Bash(find /c/Users/Usuario/OpenW/frontend -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" \\\\\\) ! -path \"*/node_modules/*\" ! -path \"*/.next/*\" -exec grep -h \"from ['\\\\\"]@/\" {} \\\\;)",
+      "Bash(cmd.exe /c start cmd /k \"cd /d C:\\\\Users\\\\Usuario\\\\OpenW\\\\backend && python run.py\")"
     ]
   }
 }

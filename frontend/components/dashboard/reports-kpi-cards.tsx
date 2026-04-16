@@ -1,7 +1,7 @@
 "use client"
 
 import { AlertTriangle, CheckCircle, Clock, ShieldAlert } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/layout/card"
 import { cn } from "@/lib/utils"
 
 interface KPIs {

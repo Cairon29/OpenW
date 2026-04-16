@@ -9,6 +9,7 @@ from .configuracion import configuracion
 from .chat_message import ChatMessage
 from .conversation_state import ConversationState
 from .system_config import SystemConfig
+from .scan_result import ScanResult
 
 __all__ = [
     'SeveridadEnum', 'EstadoEnum', 'RoleMensajeEnum', 'OnboardingStepEnum',
@@ -16,5 +17,5 @@ __all__ = [
     'CategoriaNovedad', 'Novedad',
     'IAModel', 'configuracion',
     'ChatMessage', 'ConversationState',
-    'SystemConfig',
+    'SystemConfig', 'ScanResult',
 ]

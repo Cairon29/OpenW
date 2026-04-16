@@ -7,6 +7,7 @@ from .viceprecidencia.api import viceprecidencia_bp
 from .chat.api import chat_bp
 from .auth.api import auth_bp
 from .configuracion.api import configuracion_bp
+from .virus_total.api import virus_total_bp
 
 api_v1 = Blueprint('api_v1', __name__, url_prefix='/api/v1')
 
@@ -17,3 +18,4 @@ api_v1.register_blueprint(viceprecidencia_bp, url_prefix='/vicepresidencias')
 api_v1.register_blueprint(chat_bp, url_prefix='/chat')
 api_v1.register_blueprint(auth_bp, url_prefix='/auth')
 api_v1.register_blueprint(configuracion_bp, url_prefix='/configuracion')
+api_v1.register_blueprint(virus_total_bp, url_prefix='/virustotal')

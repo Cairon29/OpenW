@@ -9,7 +9,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/data-display/table"
 import { SeverityBadge } from "@/components/dashboard/severity-badge"
 import { StatusBadge } from "@/components/dashboard/status-badge"
 import type { VulnerabilityCase } from "@/lib/types"

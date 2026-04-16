@@ -44,6 +44,8 @@ def enviar_indicador_typing(wa_message_id: str) -> None:
     auto-clears when the bot's next outbound message is delivered (or after
     ~25s, per Meta docs).
     """
+    WHATSAPP_ACCESS_TOKEN = os.getenv('WHATSAPP_ACCESS_TOKEN')
+    WHATSAPP_PHONE_NUMBER_ID = os.getenv('WHATSAPP_PHONE_NUMBER_ID')
     if not WHATSAPP_ACCESS_TOKEN or not WHATSAPP_PHONE_NUMBER_ID or not wa_message_id:
         return
     url = f"https://graph.facebook.com/v22.0/{WHATSAPP_PHONE_NUMBER_ID}/messages"

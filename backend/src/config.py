@@ -6,6 +6,14 @@ class Config:
     BACKEND_PORT                    = int(os.getenv('BACKEND_PORT', 2222))
     DEEPSEEK_API_KEY                = os.getenv('DEEPSEEK_API_KEY')
 
+    # VirusTotal
+    VIRUSTOTAL_API_KEY              = os.getenv('VIRUSTOTAL_API_KEY')
+
+    # Celery / Redis
+    REDIS_URL                       = os.getenv('REDIS_URL', 'redis://redis:6379/0')
+    CELERY_BROKER_URL               = os.getenv('REDIS_URL', 'redis://redis:6379/0')
+    CELERY_RESULT_BACKEND           = os.getenv('REDIS_URL', 'redis://redis:6379/0')
+
     # Database configuration
     DB_USER                         = os.getenv('DB_USER', 'OpenWAdmin')
     DB_PASSWORD                     = os.getenv('DB_PASSWORD', 'Apex_999')

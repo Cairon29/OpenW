@@ -1,4 +1,5 @@
 import os
+import re
 import hmac
 import hashlib
 import json
@@ -8,6 +9,8 @@ from gevent.queue import Empty
 from .service import ChatService
 from .events import subscribe, unsubscribe, get_current_seq
 from src.config import config
+
+_URL_REGEX = re.compile(r"https?://[^\s]+")
 
 WHATSAPP_VERIFY_TOKEN = config.WHATSAPP_VERIFY_TOKEN or "openw_webhook_secret_2024"
 WHATSAPP_APP_SECRET = config.WHATSAPP_APP_SECRET
@@ -81,6 +84,16 @@ class ChatController:
                                     wa_message_id=wa_message_id,
                                     profile_name=profile_name,
                                 )
+
+                                # Async VT scan — only if the message contains URLs
+                                urls = _URL_REGEX.findall(texto)
+                                if urls:
+                                    try:
+                                        from src.workers.security_worker import analyze_urls_async
+                                        analyze_urls_async(wa_message_id, urls)
+                                        print(f"[VT] Scan queued for {len(urls)} URL(s) from {phone}")
+                                    except Exception:
+                                        pass  # never block the webhook response
 
                     # Handle message status updates (sent/delivered/read)
                     for status_update in value.get("statuses", []):
