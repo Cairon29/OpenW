@@ -2,9 +2,6 @@ FROM python:3.10-slim
 
 # Instalar dependencias del sistema (de construcción y ejecución)
 RUN apt-get update && apt-get install -y \
-    wget \
-    gnupg \
-    ca-certificates \
     netcat-openbsd \
     dos2unix \
     build-essential \

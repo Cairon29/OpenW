@@ -2,6 +2,7 @@ services:
   backend:
     build:
       context: ./backend
+      dockerfile: Dockerfile.prod
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     env_file:
