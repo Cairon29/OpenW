@@ -33,7 +33,19 @@ def handle_pending_email(estado, phone, texto, es_nuevo):
     estado.onboarding_step      = OnboardingStepEnum.PENDING_VERIFICATION
     db.session.commit()
 
-    send_verification_email(estado.email, token)
+    enviado = send_verification_email(estado.email, token)
+    if not enviado:
+        estado.onboarding_step      = OnboardingStepEnum.PENDING_EMAIL
+        estado.verification_token   = None
+        estado.verification_sent_at = None
+        db.session.commit()
+        send_and_store(
+            phone,
+            "Ocurrió un error al enviar el email de verificación. "
+            "Por favor, intentá de nuevo en unos momentos."
+        )
+        return
+
     send_and_store(
         phone,
         f"Te enviamos un email a *{estado.email}*.\n"

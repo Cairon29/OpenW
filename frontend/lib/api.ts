@@ -1,4 +1,4 @@
-import type { VulnerabilityCase, Category, Severity } from "@/lib/types"
+import type { VulnerabilityCase, Category, Severity, ConfigsByCategory, SystemConfig, ConnectionTestResult } from "@/lib/types"
 
 const API_URL = ""
 
@@ -192,6 +192,52 @@ export async function verifyEmail(token: string): Promise<{ status: string }> {
     `${API_URL}/api/v1/auth/verify-email?token=${encodeURIComponent(token)}`
   )
   if (!res.ok) throw new Error("Token inválido o expirado")
+  return res.json()
+}
+
+// ── Configuración del sistema ─────────────────────────────────────────────────
+
+export async function getConfigurations(category?: string): Promise<ConfigsByCategory> {
+  const url = category
+    ? `${API_URL}/api/v1/configuracion?category=${encodeURIComponent(category)}`
+    : `${API_URL}/api/v1/configuracion`
+  const res = await fetch(url, { cache: "no-store" })
+  if (!res.ok) throw new Error("Error al obtener configuraciones")
+  return res.json()
+}
+
+export async function updateConfiguration(
+  key: string,
+  value: string,
+  updatedBy?: string
+): Promise<SystemConfig> {
+  const res = await fetch(`${API_URL}/api/v1/configuracion/${key}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ value, updated_by: updatedBy }),
+  })
+  if (!res.ok) throw new Error("Error al actualizar configuración")
+  return res.json()
+}
+
+export async function bulkUpdateConfigurations(
+  items: { key: string; value: string }[],
+  updatedBy?: string
+): Promise<{ updated: number; items: SystemConfig[] }> {
+  const res = await fetch(`${API_URL}/api/v1/configuracion/bulk`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items, updated_by: updatedBy }),
+  })
+  if (!res.ok) throw new Error("Error al guardar configuraciones")
+  return res.json()
+}
+
+export async function testConnection(service: string): Promise<ConnectionTestResult> {
+  const res = await fetch(`${API_URL}/api/v1/configuracion/test/${service}`, {
+    method: "POST",
+  })
+  if (!res.ok) throw new Error("Error al probar conexión")
   return res.json()
 }
 
