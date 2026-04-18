@@ -8,18 +8,18 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+} from "@/components/ui/overlay/dialog"
+import { Button } from "@/components/ui/forms/button"
+import { Input } from "@/components/ui/forms/input"
+import { Textarea } from "@/components/ui/forms/textarea"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
+} from "@/components/ui/forms/select"
+import { FieldGroup, Field, FieldLabel } from "@/components/ui/forms/field"
 import { createNovedad, getCategorias } from "@/lib/api"
 import type { Category, VulnerabilityCase } from "@/lib/types"
 

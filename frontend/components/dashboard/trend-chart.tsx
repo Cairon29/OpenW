@@ -1,7 +1,7 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { AreaChart } from "@/components/ui/area-chart"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/layout/card"
+import { AreaChart } from "@/components/ui/data-display/area-chart"
 import type { DashboardMetrics } from "@/lib/types"
 
 interface TrendChartProps {

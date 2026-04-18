@@ -181,6 +181,7 @@ export const mockMetrics: DashboardMetrics = {
     high: 28,
     medium: 45,
     low: 71,
+    info: 0,
   },
   byStatus: {
     open: 42,

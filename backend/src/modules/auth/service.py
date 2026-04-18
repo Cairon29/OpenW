@@ -11,6 +11,11 @@ from src.utils.menu_builders import build_vicepresidencia_menu
 
 VERIFICATION_TIMEOUT = timedelta(minutes=3)
 ALLOWED_DOMAIN = config.ALLOWED_EMAIL_DOMAIN
+if not ALLOWED_DOMAIN:
+    raise RuntimeError(
+        "La variable de entorno ALLOWED_EMAIL_DOMAIN no está configurada. "
+        "Definila en el archivo .env antes de iniciar el servidor."
+    )
 
 
 class AuthService:

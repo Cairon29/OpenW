@@ -1,5 +1,39 @@
 export type Severity = "critical" | "high" | "medium" | "low"
 
+// ── System Configuration ──────────────────────────────────────────────────────
+
+export type ConfigValueType = "string" | "number" | "boolean" | "json"
+
+export type ConfigCategory =
+  | "general"
+  | "whatsapp"
+  | "email"
+  | "analysis"
+  | "modules"
+  | "external_apis"
+
+export interface SystemConfig {
+  id: number
+  key: string
+  value: string | null
+  value_type: ConfigValueType
+  category: ConfigCategory
+  label: string
+  description: string | null
+  is_sensitive: boolean
+  is_active: boolean
+  updated_at: string | null
+  updated_by: string | null
+}
+
+export type ConfigsByCategory = Partial<Record<ConfigCategory, SystemConfig[]>>
+
+export interface ConnectionTestResult {
+  service: string
+  ok: boolean
+  message: string
+}
+
 export interface VulnerabilityCase {
   id: string
   title: string

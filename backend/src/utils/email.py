@@ -50,7 +50,7 @@ def send_verification_email(to_email: str, token: str) -> bool:
 
     try:
         context = ssl.create_default_context()
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context, timeout=10) as server:
             server.login(config.GMAIL_USER, config.GMAIL_APP_PASSWORD)
             server.sendmail(config.GMAIL_USER, to_email, msg.as_string())
         print(f"[Email] Verificación enviada a {to_email}")

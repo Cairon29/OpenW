@@ -2,18 +2,18 @@
 
 import type { DateRange } from "react-day-picker"
 import { es } from "date-fns/locale"
-import { Input } from "@/components/ui/input"
+import { Input } from "@/components/ui/forms/input"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Button } from "@/components/ui/button"
+} from "@/components/ui/forms/select"
+import { Button } from "@/components/ui/forms/button"
 import { Calendar as CalendarIcon, Filter, Search } from "lucide-react"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/overlay/popover"
+import { Calendar } from "@/components/ui/forms/calendar"
 import { cn } from "@/lib/utils"
 
 interface CasesFiltersProps {

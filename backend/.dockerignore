@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.claude/
+.git/
+.env
+.env.*
+*.md
+db-init/
+migrations/versions/__pycache__/

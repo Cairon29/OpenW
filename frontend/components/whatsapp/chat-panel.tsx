@@ -2,12 +2,12 @@
 
 import * as React from "react"
 import { Paperclip, Send, Sparkles, User, BarChart2, MessageSquare } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Switch } from "@/components/ui/switch"
-import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/data-display/avatar"
+import { Input } from "@/components/ui/forms/input"
+import { Button } from "@/components/ui/forms/button"
+import { ScrollArea } from "@/components/ui/layout/scroll-area"
+import { Switch } from "@/components/ui/forms/switch"
+import { Badge } from "@/components/ui/data-display/badge"
 import { type BotConversation } from "@/lib/api"
 import { formatTime, getInitials } from "./utils"
 
@@ -16,7 +16,7 @@ interface ChatPanelProps {
   isBotOn: boolean
   manualMessage: string
   sending: boolean
-  messagesEndRef: React.RefObject<HTMLDivElement>
+  messagesEndRef: React.RefObject<HTMLDivElement | null>
   onToggleBot: () => void
   onMessageChange: (msg: string) => void
   onSendMessage: () => void
@@ -133,8 +133,23 @@ export function ChatPanel({
                     </div>
                   </div>
                 )
-              })}
-              <div ref={messagesEndRef} />
+               })}
+               {conversation.is_typing && (
+                 <div className="flex w-full justify-end">
+                   <div className="max-w-[85%] md:max-w-[75%] lg:max-w-[65%] rounded-2xl rounded-tr-sm px-3.5 py-2.5 bg-[#dcf8c6] dark:bg-emerald-900/90 border border-emerald-200/60 dark:border-emerald-800 shadow-sm">
+                     <div className="flex items-center gap-1 mb-0.5 opacity-70">
+                       <Sparkles className="h-[10px] w-[10px]" />
+                       <span className="text-[9px] uppercase font-bold tracking-wider">IA</span>
+                     </div>
+                     <div className="flex items-center gap-1 py-1">
+                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-700/60 animate-bounce [animation-delay:-0.3s]" />
+                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-700/60 animate-bounce [animation-delay:-0.15s]" />
+                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-700/60 animate-bounce" />
+                     </div>
+                   </div>
+                 </div>
+               )}
+               <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
 

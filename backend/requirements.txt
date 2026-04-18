@@ -7,7 +7,7 @@ psycopg2-binary
 pgvector
 python-dotenv
 gunicorn
-greenlet==3.3.2
+gevent
 SQLAlchemy==2.0.48
 typing_extensions==4.15.0
 marshmallow
