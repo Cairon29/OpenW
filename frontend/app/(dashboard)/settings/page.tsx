@@ -11,9 +11,9 @@ import {
   Loader2,
   RefreshCw,
 } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/navigation/tabs"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/layout/card"
+import { Button } from "@/components/ui/forms/button"
 import { PageHeader } from "@/components/dashboard/page-header"
 import { SettingsField } from "@/components/dashboard/settings-field"
 import { ConnectionCard } from "@/components/dashboard/settings-connection-card"

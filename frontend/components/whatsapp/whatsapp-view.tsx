@@ -13,7 +13,7 @@ export function WhatsAppView() {
   const [manualMessage, setManualMessage] = useState("")
   const [sending, setSending] = useState(false)
   const [profileModalOpen, setProfileModalOpen] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
   const selectedConv = conversations.find(c => c.phone === selectedPhone) ?? null
   const isBotOn = selectedConv?.bot_active ?? true

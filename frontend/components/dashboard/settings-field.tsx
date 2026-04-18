@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react"
 import { Eye, EyeOff, Loader2, Check, X, AlertCircle } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/forms/input"
+import { Button } from "@/components/ui/forms/button"
+import { Switch } from "@/components/ui/forms/switch"
+import { Textarea } from "@/components/ui/forms/textarea"
+import { Label } from "@/components/ui/forms/label"
 import type { SystemConfig } from "@/lib/types"
 import { updateConfiguration } from "@/lib/api"
 

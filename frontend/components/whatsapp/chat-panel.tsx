@@ -16,7 +16,7 @@ interface ChatPanelProps {
   isBotOn: boolean
   manualMessage: string
   sending: boolean
-  messagesEndRef: React.RefObject<HTMLDivElement>
+  messagesEndRef: React.RefObject<HTMLDivElement | null>
   onToggleBot: () => void
   onMessageChange: (msg: string) => void
   onSendMessage: () => void

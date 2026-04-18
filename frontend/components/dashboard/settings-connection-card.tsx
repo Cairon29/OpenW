@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Loader2, CheckCircle2, XCircle, Plug } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/forms/button"
 import { testConnection } from "@/lib/api"
 import type { ConnectionTestResult } from "@/lib/types"
 
