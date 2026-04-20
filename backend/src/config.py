@@ -34,5 +34,27 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     DEBUG = False
 
+class TestingConfig(Config):
+    DEBUG = False
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = (
+        f"postgresql://{Config.DB_USER}:{Config.DB_PASSWORD}"
+        f"@{Config.DB_HOST}:{Config.DB_PORT}/OpenW_test"
+    )
+    ALLOWED_EMAIL_DOMAIN     = "test.local"
+    DEEPSEEK_API_KEY         = "test-deepseek-key"
+    GMAIL_USER               = "test@test.local"
+    GMAIL_APP_PASSWORD       = "test-password"
+    WHATSAPP_ACCESS_TOKEN    = "test-wa-token"
+    WHATSAPP_PHONE_NUMBER_ID = "test-wa-phone-id"
+    WHATSAPP_VERIFY_TOKEN    = "test-verify-token"
+    WHATSAPP_APP_SECRET      = "test-app-secret"
+    SECRET_KEY               = "test-secret-key"
+
 _env = os.getenv('FLASK_MODE', 'development')
-config = ProductionConfig if _env == 'production' else DevelopmentConfig
+if _env == 'production':
+    config = ProductionConfig
+elif _env == 'testing':
+    config = TestingConfig
+else:
+    config = DevelopmentConfig

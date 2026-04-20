@@ -24,6 +24,7 @@ class SystemConfig(db.Model):
         onupdate=lambda: datetime.now(timezone.utc),
     )
     updated_by  = db.Column(db.String(100), nullable=True)
+    ai_full_response = db.Column(db.Boolean, default=False, nullable=False)
 
     def to_dict(self, reveal_sensitive=False):
         value = self.value
@@ -44,4 +45,5 @@ class SystemConfig(db.Model):
             "is_active":    self.is_active,
             "updated_at":   self.updated_at.isoformat() if self.updated_at else None,
             "updated_by":   self.updated_by,
+            "ai_full_response": self.ai_full_response,
         }
