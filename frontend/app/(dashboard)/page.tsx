@@ -9,6 +9,7 @@ import { BotMetricCard } from "@/components/dashboard/bot-metric-card"
 import { BotTrendChart } from "@/components/dashboard/bot-trend-chart"
 import { BotEffectivenessChart } from "@/components/dashboard/bot-effectiveness-chart"
 import { PageHeader } from "@/components/dashboard/page-header"
+import { NovedadesVicepresidencia } from "@/components/dashboard/novedades-viceprecidencia"
 import { useDashboardData } from "@/hooks/use-dashboard-data"
 
 export default function DashboardPage() {
@@ -104,6 +105,10 @@ export default function DashboardPage() {
 
       <div className="pt-6">
         <RecentCases cases={cases} />
+      </div>
+
+      <div className="pt-6">
+        <NovedadesVicepresidencia />
       </div>
     </div>
   )

@@ -241,6 +241,52 @@ export async function testConnection(service: string): Promise<ConnectionTestRes
   return res.json()
 }
 
+// ── Novedades por Vicepresidencia ────────────────────────────────────────────
+
+export interface DireccionCount {
+  id_direccion: number
+  direccion: string
+  total: number
+}
+
+export interface NovedadDetalle {
+  id_novedad: number
+  email_creador: string
+  fecha_creacion: string | null
+  estado: string | null
+  titulo: string
+}
+
+export interface DireccionDetalle extends DireccionCount {
+  novedades: NovedadDetalle[]
+}
+
+export interface VicepresidenciaCount {
+  id_vicepresidencia: number
+  vicepresidencia: string
+  total: number
+  direcciones: DireccionCount[]
+}
+
+export interface VicepresidenciaDetalle {
+  id_vicepresidencia: number
+  vicepresidencia: string
+  total: number
+  direcciones: DireccionDetalle[]
+}
+
+export async function getNovedadesPorVicepresidencia(): Promise<VicepresidenciaCount[]> {
+  const res = await fetch(`${API_URL}/api/v1/novedades/vicepresidencia`)
+  if (!res.ok) throw new Error("Error al obtener novedades por vicepresidencia")
+  return res.json()
+}
+
+export async function getDetalleVicepresidencia(id: number): Promise<VicepresidenciaDetalle> {
+  const res = await fetch(`${API_URL}/api/v1/novedades/vicepresidencia/${id}`)
+  if (!res.ok) throw new Error("Error al obtener detalle de vicepresidencia")
+  return res.json()
+}
+
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
 export async function login(
