@@ -19,6 +19,11 @@ echo "--- Running seed script... ---"
 python -m src.db.scripts.seed
 echo "--- Seed complete! ---"
 
+# Run triggers script (idempotent — safe to run on every deploy)
+echo "--- Running triggers script... ---"
+python -m src.db.scripts.triggers
+echo "--- Triggers complete! ---"
+
 # Start Gunicorn server
 echo "--- Starting Gunicorn... ---"
 exec gunicorn \

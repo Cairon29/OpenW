@@ -80,6 +80,17 @@ def create_novedad_from_state(estado, phone):
             )
             db.session.add(user)
             db.session.flush()
+        else:
+            phone_str = str(phone) if phone else None
+            if estado.wa_profile_name and estado.wa_profile_name != user.name:
+                user.name = estado.wa_profile_name
+            if phone_str and phone_str != user.phone:
+                user.phone = phone_str
+            if estado.fk_id_vicepresidencia and estado.fk_id_vicepresidencia != user.fk_id_vicepresidencia:
+                user.fk_id_vicepresidencia = estado.fk_id_vicepresidencia
+            if estado.fk_id_direccion and estado.fk_id_direccion != user.fk_id_direccion:
+                user.fk_id_direccion = estado.fk_id_direccion
+            db.session.flush()
 
     nueva_novedad = Novedad(
         titulo=estado.pending_titulo,
