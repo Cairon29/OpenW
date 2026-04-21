@@ -11,16 +11,74 @@ from src.db.models.direccion import Direccion
 
 
 SEED_DATA = {
+    "Riesgos": [
+        "Estructuración",
+        "Estrategia Comercial",
+        "Oficinas Regionales",
+    ],
+    "Comercial": [
+        "Estructuración",
+        "Estrategia Comercial",
+        "Oficinas Regionales",
+    ],
+    "Contratación Derivada": [
+        "Contratos",
+        "Contratos de Negocios Especiales",
+    ],
+    "Desarrollo y Soporte Organizacional": [
+        "Talento Humano",
+        "Gestión Documental",
+        "Adquisiciones y Contratos",
+        "Recursos Físicos",
+    ],
+    "Fondo de Prestaciones": [
+        "Gestión Fondo de Prestaciones",
+        "Unidad de Defensa Judicial Fondo de Prestaciones",
+        "Servicios de Salud",
+        "Administrativa y Financiera",
+        "Automatización de la Gestión y Aseguramiento de la Información",
+        "Prestaciones Económicas",
+    ],
+    "Inversiones": [
+        "Gestión de Portafolios",
+        "Mercados",
+        "Fondos de Inversión Colectiva",
+        "Investigaciones Económicas",
+    ],
+    "Negocios Fiduciarios": [
+        "Liquidaciones y Remanentes",
+        "Liquidaciones",
+        "Fondo Nacional de Gestión de Riesgos y Desastres",
+        "Negocios",
+        "Oficinas Regionales",
+    ],
+    "Planeación": [
+        "Planeación Estratégica y Financiera",
+        "Sistemas de Gestión",
+    ],
     "Tecnología e Información": [
         "Software",
         "Infraestructura",
-        "Ciberseguridad",
-        "Base de Datos",
-        "Arquitectura",
-        "Redes",
+        "Proyectos Especiales",
+        "Ciberseguridad y Riesgos TI",
+    ],
+    "Transformación y Arquitectura Organizacional": [
+        "Innovación y Desarrollo",
+        "Servicio al Cliente",
+        "Agencias Nacionales",
+    ],
+    "Financiera": [
+        "Contabilidad",
+        "Impuestos",
+        "Tesorería",
+        "Pagos",
+        "Back Office",
+    ],
+    "Jurídica - Secretaría General": [
+        "Jurídica",
+        "Procesos Judiciales y Administrativos",
     ],
 }
-
 
 def seed():
     for vp_nombre, direcciones in SEED_DATA.items():
