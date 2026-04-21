@@ -12,6 +12,7 @@ from .system_config import SystemConfig
 from .history_changes.prev_user_name import PrevUserName
 from .history_changes.prev_user_direccion import PrevUserDireccion
 from .history_changes.prev_user_vicieprecidencia import PrevUserViceprecidencia
+from .history_changes.prev_user_telefono import PrevUserTelefono
 
 __all__ = [
     'SeveridadEnum', 'EstadoEnum', 'RoleMensajeEnum', 'OnboardingStepEnum',
@@ -20,5 +21,5 @@ __all__ = [
     'IAModel', 'configuracion',
     'ChatMessage', 'ConversationState',
     'SystemConfig',
-    'PrevUserName', 'PrevUserDireccion', 'PrevUserViceprecidencia',
+    'PrevUserName', 'PrevUserDireccion', 'PrevUserViceprecidencia', 'PrevUserTelefono',
 ]
