@@ -56,3 +56,21 @@ class NovedadesController:
             return jsonify(NovedadService.get_dashboard_metrics()), 200
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+
+    @staticmethod
+    def novedades_por_vicepresidencia():
+        try:
+            data = NovedadService.get_novedades_por_vicepresidencia()
+            return jsonify(data), 200
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @staticmethod
+    def novedades_detalle_vicepresidencia(id):
+        try:
+            data = NovedadService.get_novedades_detalle_vicepresidencia(id)
+            if data is None:
+                return jsonify({"error": "Vicepresidencia no encontrada"}), 404
+            return jsonify(data), 200
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500

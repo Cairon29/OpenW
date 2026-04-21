@@ -11,3 +11,5 @@ novedades_bp.add_url_rule('/novedades/<int:id>', view_func=controller.obtener_no
 
 # Dashboard
 novedades_bp.add_url_rule('/dashboard/metrics', view_func=controller.dashboard_metrics, methods=['GET'])
+novedades_bp.add_url_rule('/vicepresidencia', view_func=controller.novedades_por_vicepresidencia, methods=['GET'])
+novedades_bp.add_url_rule('/vicepresidencia/<int:id>', view_func=controller.novedades_detalle_vicepresidencia, methods=['GET'])
