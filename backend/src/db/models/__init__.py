@@ -9,6 +9,9 @@ from .configuracion import configuracion
 from .chat_message import ChatMessage
 from .conversation_state import ConversationState
 from .system_config import SystemConfig
+from .history_changes.prev_user_name import PrevUserName
+from .history_changes.prev_user_direccion import PrevUserDireccion
+from .history_changes.prev_user_vicieprecidencia import PrevUserViceprecidencia
 
 __all__ = [
     'SeveridadEnum', 'EstadoEnum', 'RoleMensajeEnum', 'OnboardingStepEnum',
@@ -17,4 +20,5 @@ __all__ = [
     'IAModel', 'configuracion',
     'ChatMessage', 'ConversationState',
     'SystemConfig',
+    'PrevUserName', 'PrevUserDireccion', 'PrevUserViceprecidencia',
 ]
