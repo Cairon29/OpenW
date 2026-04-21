@@ -4,10 +4,9 @@ from datetime import datetime, timezone
 
 class Usuarios(db.Model):
     __tablename__ = 'usuarios'
-    id = db.Column(db.Integer, primary_key=True)
-    phone = db.Column(db.Integer, nullable=True, unique=True)
+    phone = db.Column(db.String(20), nullable=True, unique=True)
     name = db.Column(db.String(80), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    email = db.Column(db.String(120), primary_key=True)
     password = db.Column(db.String(120), nullable=True)
     is_admin = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))

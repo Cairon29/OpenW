@@ -24,7 +24,7 @@ class Novedad(db.Model):
         default=EstadoEnum.ABIERTA,
     )
 
-    fk_id_usuario = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
+    fk_email_usuario = db.Column(db.String(120), db.ForeignKey('usuarios.email'), nullable=True)
     fk_id_direccion = db.Column(db.Integer, db.ForeignKey('direccion.id'), nullable=True)
     fk_id_categoria = db.Column(db.Integer, db.ForeignKey('categoria_novedad.id'), nullable=True)
 
@@ -44,7 +44,7 @@ class Novedad(db.Model):
                 "categoria": self.categoria.categoria,
             } if self.categoria else None,
             "creador": {
-                "id": self.creador.id,
+                "email": self.creador.email,
                 "name": self.creador.name,
             } if self.creador else None,
         }

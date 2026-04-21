@@ -10,7 +10,7 @@ class NovedadService:
         return Novedad.query.order_by(Novedad.fecha_registro.desc()).all()
 
     @staticmethod
-    def create_novedad(titulo, descripcion, severidad, estado=None, categoria_id=None, user_id=None):
+    def create_novedad(titulo, descripcion, severidad, estado=None, categoria_id=None, user_email=None):
         """Crea una novedad manualmente desde el dashboard."""
         sev = SeveridadEnum(severidad) if severidad else SeveridadEnum.MEDIA
         est = EstadoEnum(estado) if estado else EstadoEnum.ABIERTA
@@ -20,7 +20,7 @@ class NovedadService:
             severidad=sev,
             estado=est,
             fk_id_categoria=categoria_id,
-            fk_id_usuario=user_id,
+            fk_email_usuario=user_email,
             fecha_registro=datetime.now(timezone.utc),
         )
         db.session.add(novedad)

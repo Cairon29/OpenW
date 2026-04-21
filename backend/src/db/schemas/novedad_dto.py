@@ -10,8 +10,8 @@ class NovedadSchema(Schema):
     severidad = fields.Enum(SeveridadEnum, by_value=True)
     estado = fields.Enum(EstadoEnum, by_value=True)
     fk_id_categoria = fields.Int(allow_none=True)
-    fk_id_usuario = fields.Int(allow_none=True)
-    creador = fields.Nested("UserSchema", only=("id", "name"), dump_only=True)
+    fk_email_usuario = fields.Str(allow_none=True)
+    creador = fields.Nested("UserSchema", only=("email", "name"), dump_only=True)
     categoria = fields.Nested("CategoriaSchema", only=("id", "categoria"), dump_only=True)
 
 

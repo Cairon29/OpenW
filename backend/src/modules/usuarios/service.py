@@ -5,14 +5,16 @@ class UsuariosService:
 
     @staticmethod
     def register_from_whatsapp(data):
-        phone_number = data.get("phone")
-        user = Usuarios.query.filter_by(phone=phone_number).first()
+        email = data.get("email")
+        if not email:
+            return None
+        user = Usuarios.query.filter_by(email=email).first()
 
         if not user:
             user = Usuarios(
-                phone=phone_number,
-                name=data.get("name", f"Usuario_{phone_number}"),
-                email=data.get("email"),
+                email=email,
+                phone=data.get("phone"),
+                name=data.get("name", f"Usuario_{email}"),
                 password=data.get("password", "temp_pass_whatsapp"),
                 is_admin=False,
                 fk_id_direccion=data.get("direccion_id"),
@@ -22,8 +24,8 @@ class UsuariosService:
         else:
             if "name" in data:
                 user.name = data["name"]
-            if "email" in data:
-                user.email = data["email"]
+            if "phone" in data:
+                user.phone = data["phone"]
 
         try:
             db.session.commit()

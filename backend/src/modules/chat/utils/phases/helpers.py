@@ -65,10 +65,26 @@ def enviar_template_whatsapp(phone, template_name, lang_code="es_CO"):
 
 def create_novedad_from_state(estado, phone):
     """Crea la Novedad con los datos almacenados en ConversationState."""
+    from src.db.models import Usuarios
+
+    user_email = estado.email
+    if user_email:
+        user = Usuarios.query.filter_by(email=user_email).first()
+        if not user:
+            user = Usuarios(
+                email=user_email,
+                phone=str(phone) if phone else None,
+                name=estado.wa_profile_name or f"Usuario_{phone}",
+                fk_id_vicepresidencia=estado.fk_id_vicepresidencia,
+                fk_id_direccion=estado.fk_id_direccion,
+            )
+            db.session.add(user)
+            db.session.flush()
+
     nueva_novedad = Novedad(
         titulo=estado.pending_titulo,
         descripcion=estado.pending_descripcion,
-        fk_id_usuario=None,
+        fk_email_usuario=user_email,
         fk_id_direccion=estado.fk_id_direccion,
         fk_id_categoria=estado.pending_categoria_id,
         severidad=SEVERIDAD_MAP.get(estado.pending_severidad, SeveridadEnum.MEDIA),

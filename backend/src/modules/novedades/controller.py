@@ -20,10 +20,14 @@ class NovedadesController:
         if not data:
             return jsonify({"error": "Body requerido"}), 400
 
+        required_fields = ["titulo", "descripcion", "user_email", "phone", "severidad"]
+
         titulo = (data.get("titulo") or "").strip()
         descripcion = (data.get("descripcion") or "").strip()
-        if not titulo or not descripcion:
-            return jsonify({"error": "titulo y descripcion son requeridos"}), 400
+
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({"error": f"{field} es requerido"}), 400
 
         try:
             novedad = NovedadService.create_novedad(
@@ -32,7 +36,7 @@ class NovedadesController:
                 severidad=data.get("severidad"),
                 estado=data.get("estado"),
                 categoria_id=data.get("categoria_id"),
-                user_id=data.get("user_id"),
+                user_email=data.get("user_email"),
             )
             return jsonify(novedad_schema.dump(novedad)), 201
         except Exception as e:
