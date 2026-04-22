@@ -47,18 +47,18 @@ export function SeverityChart({ data }: SeverityChartProps) {
             >
               <XAxis
                 dataKey="name"
-                tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
                 allowDecimals={false}
-                tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                 axisLine={false}
                 tickLine={false}
               />
               <Tooltip
-                cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
+                cursor={{ fill: "var(--muted)", opacity: 0.4 }}
                 content={({ active, payload }) => {
                   if (!active || !payload?.length) return null
                   const item = payload[0]
@@ -90,8 +90,8 @@ export function SeverityChart({ data }: SeverityChartProps) {
                 className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
                 style={{ backgroundColor: entry.color }}
               />
-              <span className="text-muted-foreground">{entry.name}</span>
-              <span className="ml-auto font-medium text-foreground tabular-nums">
+              <span className="text-muted-foreground">{entry.name}: </span>
+              <span className="font-medium text-foreground tabular-nums">
                 {entry.value}
               </span>
             </li>

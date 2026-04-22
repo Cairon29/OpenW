@@ -17,8 +17,8 @@ import {
   type VicepresidenciaDetalle
 } from "@/lib/api"
 
-const BAR_COLOR = "#6366f1"
-const BAR_COLOR_DETAIL = "#8b5cf6"
+const BAR_COLOR = "#fa8200"
+const BAR_COLOR_DETAIL = "#ecab66"
 const MIN_BAR = 0.1
 
 export function NovedadesVicepresidencia() {
@@ -81,7 +81,7 @@ export function NovedadesVicepresidencia() {
                   <XAxis
                     type="number"
                     allowDecimals={false}
-                    tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                    tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                     axisLine={false}
                     tickLine={false}
                   />
@@ -89,12 +89,12 @@ export function NovedadesVicepresidencia() {
                     type="category"
                     dataKey="vicepresidencia"
                     width={160}
-                    tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                    tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <Tooltip
-                    cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
+                    cursor={{ fill: "var(--muted)", opacity: 0.4 }}
                     content={({ active, payload }) => {
                       if (!active || !payload?.length) return null
                       const item = payload[0]
@@ -152,11 +152,11 @@ export function NovedadesVicepresidencia() {
                   <BarChart
                     data={detailChartData}
                     margin={{ top: 4, right: 8, left: 8, bottom: 60 }}
-                    barSize={20}
+                    barSize={40}
                   >
                     <XAxis
                       dataKey="direccion"
-                      tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                      tick={{ fontSize: 13, fill: "var(--muted-foreground)" }}
                       axisLine={false}
                       tickLine={false}
                       angle={-35}
@@ -165,12 +165,12 @@ export function NovedadesVicepresidencia() {
                     />
                     <YAxis
                       allowDecimals={false}
-                      tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                      tick={{ fontSize: 13, fill: "var(--muted-foreground)" }}
                       axisLine={false}
                       tickLine={false}
                     />
                     <Tooltip
-                      cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
+                      cursor={{ fill: "var(--muted)", opacity: 0.4 }}
                       content={({ active, payload }) => {
                         if (!active || !payload?.length) return null
                         const item = payload[0]

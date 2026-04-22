@@ -99,7 +99,7 @@ export function CategoryForm({ open, onOpenChange, onSubmit }: CategoryFormProps
               placeholder="Describe el tipo de vulnerabilidades que incluye esta categoría..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="bg-secondary border-border text-foreground min-h-[80px]"
+              className="bg-secondary border-border text-foreground min-h-[80px] max-h-[200px] overflow-y-auto"
             />
           </Field>
 
